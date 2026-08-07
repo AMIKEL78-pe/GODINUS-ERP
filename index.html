@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOD IN US — Panel de Gestión</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --olive-deep:#2E3620;
+    --olive:#5C6B3D;
+    --olive-mid:#7C8A57;
+    --olive-light:#B6C093;
+    --sage-bg:#F3F1E6;
+    --sage-card:#FBFAF4;
+    --ink:#1C1C15;
+    --ink-soft:#5A5A4C;
+    --gold:#B5872E;
+    --gold-soft:#E8D9AF;
+    --white:#FFFFFF;
+    --danger:#8C3B2E;
+    --line:#DEDACB;
+    --radius:14px;
+    --shadow: 0 2px 14px rgba(46,54,32,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  html,body{
+    background:var(--sage-bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    margin:0;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* --- Staff-line signature motif --- */
+  .staff{
+    position:relative;
+    height:26px;
+    margin:2px 0 10px;
+  }
+  .staff::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:repeating-linear-gradient(
+      to bottom,
+      currentColor 0px, currentColor 1px,
+      transparent 1px, transparent 6px
+    );
+    opacity:0.35;
+  }
+  .staff-note{
+    position:absolute;
+    width:7px;height:7px;
+    border-radius:50%;
+    background:var(--gold);
+    top:0;
+  }
+
+  /* --- Layout --- */
+  .app{
+    display:grid;
+    grid-template-columns:250px 1fr;
+    min-height:100vh;
+  }
+  .sidebar{
+    background:var(--olive-deep);
+    color:var(--sage-bg);
+    padding:28px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:26px;
+  }
+  .brand{color:var(--gold-soft);}
+  .brand .staff{color:var(--gold-soft);}
+  .brand-name{
+    font-size:1.28rem;
+    line-height:1.15;
+  }
+  .brand-sub{
+    font-size:0.7rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--olive-light);
+    margin-top:4px;
+  }
+  .role-switch{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    background:rgba(255,255,255,0.04);
+    padding:10px;
+    border-radius:10px;
+  }
+  .role-switch label{
+    font-size:0.66rem;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--olive-light);
+    margin-bottom:2px;
+  }
+  .role-btn{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.14);
+    color:var(--sage-bg);
+    padding:7px 10px;
+    border-radius:7px;
+    font-family:'Inter',sans-serif;
+    font-size:0.82rem;
+    cursor:pointer;
+    text-align:left;
+    transition:background .15s, border-color .15s;
+  }
+  .role-btn.active{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:var(--olive-deep);
+    font-weight:600;
+  }
+  nav.navlist{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    flex:1;
+  }
+  .navlink{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:8px;
+    color:var(--olive-light);
+    font-size:0.9rem;
+    cursor:pointer;
+    border:none;
+    background:transparent;
+    text-align:left;
+    font-family:'Inter',sans-serif;
+  }
+  .navlink:hover{background:rgba(255,255,255,0.06); color:var(--sage-bg);}
+  .navlink.active{
+    background:var(--olive);
+    color:var(--white);
+    font-weight:600;
+  }
+  .navlink .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6;}
+
+  .sidebar-foot{
+    font-size:0.72rem;
+    color:var(--olive-mid);
+    border-top:1px solid rgba(255,255,255,0.08);
+    padding-top:14px;
+  }
+
+  main{padding:34px 40px 60px;}
+  .topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-bottom:26px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:18px;
+  }
+  .topbar h1{font-size:1.7rem;color:var(--olive-deep);}
+  .topbar .eyebrow{
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .topbar .date{
+    font-size:0.85rem;
+    color:var(--ink-soft);
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  .section{display:none;}
+  .section.active{display:block;}
+
+  /* Cards / grids */
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:16px;
+    margin-bottom:30px;
+  }
+  .stat-card{
+    background:var(--sage-card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    box-shadow:var(--shadow);
+  }
+  .stat-card .label{
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.09em;
+    color:var(--ink-soft);
+  }
+  .stat-card .value{
+    font-family:'Fraunces',serif;
+    font-size:2rem;
+    font-weight:600;
+    color:var(--olive-deep);
+    margin-top:4px;
+  }
+  .stat-card .sub{font-size:0.76rem;color:var(--olive-mid);margin-top:2px;}
+
+  .panel{
+    background:var(--sage-card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px 24px;
+    box-shadow:var(--shadow);
+    margin-bottom:24px;
+  }
+  .panel h2{font-size:1.05rem;color:var(--olive-deep);margin-bottom:14px;}
+  .two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;}
+  @media(max-width:1000px){.two-col{grid-template-columns:1fr;}}
+
+  /* Bar chart (pure CSS) */
+  .bars{
+    display:flex;
+    align-items:flex-end;
+    gap:10px;
+    height:150px;
+    padding-top:10px;
+  }
+  .bar-col{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    height:100%;
+    justify-content:flex-end;
+  }
+  .bar{
+    width:100%;
+    max-width:34px;
+    background:linear-gradient(to top, var(--olive), var(--olive-light));
+    border-radius:4px 4px 0 0;
+  }
+  .bar-label{font-size:0.68rem;color:var(--ink-soft);}
+
+  ul.clean{list-style:none;margin:0;padding:0;}
+  .agenda-item{
+    display:flex;
+    justify-content:space-between;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+    font-size:0.86rem;
+  }
+  .agenda-item:last-child{border-bottom:none;}
+  .agenda-time{font-family:'JetBrains Mono',monospace;color:var(--gold);font-weight:600;min-width:52px;}
+
+  table{width:100%;border-collapse:collapse;font-size:0.87rem;}
+  th{
+    text-align:left;
+    font-size:0.68rem;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-soft);
+    border-bottom:2px solid var(--olive-deep);
+    padding:9px 10px;
+  }
+  td{padding:11px 10px;border-bottom:1px solid var(--line);}
+  tr:hover td{background:rgba(92,107,61,0.05);}
+
+  .badge{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:20px;
+    font-size:0.72rem;
+    font-weight:600;
+  }
+  .badge.ok{background:#E4EAD6;color:var(--olive-deep);}
+  .badge.pend{background:var(--gold-soft);color:#7A5A16;}
+  .badge.no{background:#F0DAD5;color:var(--danger);}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+  input[type=text],input[type=number],input[type=date],select{
+    font-family:'Inter',sans-serif;
+    padding:9px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--white);
+    font-size:0.86rem;
+    color:var(--ink);
+  }
+  input:focus,select:focus{outline:2px solid var(--olive-mid);outline-offset:1px;}
+  button.primary{
+    background:var(--olive-deep);
+    color:var(--white);
+    border:none;
+    padding:9px 16px;
+    border-radius:8px;
+    font-size:0.86rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button.primary:hover{background:var(--olive);}
+  button.ghost{
+    background:transparent;
+    border:1px solid var(--line);
+    padding:8px 14px;
+    border-radius:8px;
+    font-size:0.82rem;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  button.ghost:hover{border-color:var(--olive-mid);color:var(--olive-deep);}
+
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;}
+  .prof-card{
+    background:var(--sage-card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    box-shadow:var(--shadow);
+  }
+  .prof-avatar{
+    width:44px;height:44px;border-radius:50%;
+    background:var(--olive);
+    color:var(--white);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:1.05rem;
+    margin-bottom:10px;
+  }
+  .prof-card h3{font-size:0.98rem;color:var(--olive-deep);}
+  .prof-card .role{font-size:0.76rem;color:var(--gold);font-weight:600;margin:2px 0 8px;}
+  .prof-card .meta{font-size:0.8rem;color:var(--ink-soft);line-height:1.5;}
+
+  .week-grid{
+    display:grid;
+    grid-template-columns:70px repeat(6,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    font-size:0.76rem;
+  }
+  .week-grid .cell{background:var(--sage-card);padding:8px 6px;min-height:52px;}
+  .week-grid .head{
+    background:var(--olive-deep);
+    color:var(--sage-bg);
+    font-weight:600;
+    text-align:center;
+    padding:8px 4px;
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .week-grid .time-label{
+    background:var(--sage-bg);
+    color:var(--ink-soft);
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.7rem;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .class-chip{
+    background:var(--olive-light);
+    color:var(--olive-deep);
+    border-radius:6px;
+    padding:3px 6px;
+    margin-bottom:3px;
+    font-weight:600;
+    font-size:0.7rem;
+  }
+  .class-chip small{display:block;font-weight:400;opacity:.85;}
+
+  .empty{
+    text-align:center;
+    padding:30px 10px;
+    color:var(--ink-soft);
+  }
+  .empty .staff{max-width:160px;margin:0 auto 10px;color:var(--olive-mid);}
+
+  .report-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;}
+  .report-card{
+    background:var(--sage-card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;box-shadow:var(--shadow);
+  }
+  .report-card h3{font-size:0.92rem;color:var(--olive-deep);margin-bottom:6px;}
+  .report-card p{font-size:0.8rem;color:var(--ink-soft);margin:0 0 12px;}
+
+  .btn-icon{
+    background:transparent;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:5px 9px;
+    font-size:0.72rem;
+    cursor:pointer;
+    color:var(--ink-soft);
+    margin-right:4px;
+    font-family:'Inter',sans-serif;
+  }
+  .btn-icon:hover{border-color:var(--olive-mid);color:var(--olive-deep);}
+  .btn-icon.danger:hover{border-color:var(--danger);color:var(--danger);}
+  .actions-cell{white-space:nowrap;}
+  td input, td select{padding:6px 8px;font-size:0.8rem;width:100%;}
+  .add-row-panel .toolbar{align-items:flex-end;}
+  .field{display:flex;flex-direction:column;}
+  .field label{
+    display:block;font-size:0.65rem;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--ink-soft);margin-bottom:3px;
+  }
+
+  /* Modal de horario */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(28,28,21,0.5);
+    display:none;align-items:center;justify-content:center;z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--sage-card);
+    border-radius:var(--radius);
+    padding:24px;
+    width:380px;
+    max-width:92vw;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  }
+  .modal h2{font-size:1.05rem;color:var(--olive-deep);margin-bottom:4px;}
+  .modal .modal-sub{font-size:0.78rem;color:var(--ink-soft);margin-bottom:16px;font-family:'JetBrains Mono',monospace;}
+  .modal .field{margin-bottom:12px;}
+  .modal select, .modal input{width:100%;}
+  .modal-actions{display:flex;justify-content:space-between;margin-top:18px;gap:8px;}
+  .modal-msg{font-size:0.78rem;padding:8px 10px;border-radius:8px;margin-bottom:12px;}
+  .modal-msg.warn{background:var(--gold-soft);color:#7A5A16;}
+  .modal-msg.err{background:#F0DAD5;color:var(--danger);}
+  .class-chip{cursor:pointer;}
+  .cell.slot-empty{cursor:pointer;transition:background .12s;}
+  .cell.slot-empty:hover{background:var(--sage-bg);}
+
+  ::selection{background:var(--gold-soft);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="staff"></div>
+      <div class="brand-name">GOD IN US</div>
+      <div class="brand-sub">Academia de Formación Musical</div>
+    </div>
+
+    <div class="role-switch">
+      <label>Ver como</label>
+      <button class="role-btn active" data-role="admin">Administrador</button>
+      <button class="role-btn" data-role="profesor">Profesor — María Rojas</button>
+      <button class="role-btn" data-role="alumno">Alumno — Diego Salas</button>
+    </div>
+
+    <nav class="navlist" id="navlist"></nav>
+
+    <div class="sidebar-foot">Perú · año lectivo 2026</div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <div class="eyebrow" id="roleLabel">Panel administrador</div>
+        <h1 id="pageTitle">Dashboard</h1>
+      </div>
+      <div class="date" id="dateNow"></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section class="section" id="sec-dashboard">
+      <div class="stat-grid" id="statGrid"></div>
+      <div class="two-col">
+        <div class="panel">
+          <h2>Ingresos últimos 6 meses (S/)</h2>
+          <div class="bars" id="chartIngresos"></div>
+        </div>
+        <div class="panel">
+          <h2 id="agendaTitle">Clases de hoy</h2>
+          <ul class="clean" id="agendaList"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ALUMNOS -->
+    <section class="section" id="sec-alumnos">
+      <div class="panel add-row-panel" id="panelNuevoAlumno">
+        <h2 id="panelNuevoAlumnoTitulo">Nuevo alumno</h2>
+        <div class="toolbar">
+          <div class="field" id="nvAlNombreWrap"><label>Nombre</label><input type="text" id="nvAlNombre" placeholder="Nombre completo"></div>
+          <div class="field" id="nvAlInstrumentoWrap"><label>Instrumento</label><select id="nvAlInstrumento" onchange="actualizarProfesoresPorInstrumento()"></select></div>
+          <div class="field" id="nvAlNivelWrap"><label>Nivel</label><select id="nvAlNivel"></select></div>
+          <div class="field" id="nvAlProfesorWrap"><label>Profesor</label><select id="nvAlProfesor"></select></div>
+          <button class="primary" onclick="agregarAlumnoNuevo()">Guardar</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="toolbar">
+          <input type="text" id="buscarAlumno" placeholder="Buscar alumno por nombre o instrumento…">
+        </div>
+        <table>
+          <thead><tr><th>Alumno</th><th>Instrumento</th><th>Nivel</th><th>Profesor</th><th>Estado</th><th>Ingreso</th><th>Acciones</th></tr></thead>
+          <tbody id="tablaAlumnos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MATRICULA -->
+    <section class="section" id="sec-matricula">
+      <div class="panel">
+        <h2>Nueva matrícula</h2>
+        <div class="toolbar" style="gap:12px;">
+          <select id="matNombre"></select>
+          <select id="matCurso"></select>
+          <select id="matProfesor"></select>
+          <input type="number" id="matMonto" placeholder="Monto S/" style="width:110px;">
+          <button class="primary" id="btnMatricular">Registrar matrícula</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Matrículas registradas</h2>
+        <table>
+          <thead><tr><th>Alumno</th><th>Curso</th><th>Profesor</th><th>Monto</th><th>Estado de pago</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody id="tablaMatriculas"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- HORARIOS -->
+    <section class="section" id="sec-horarios">
+      <div class="panel">
+        <h2 id="horarioTitle">Horario semanal</h2>
+        <div class="week-grid" id="weekGrid"></div>
+      </div>
+    </section>
+
+    <!-- PROFESORES -->
+    <section class="section" id="sec-profesores">
+      <div class="panel">
+        <h2>Plana docente</h2>
+        <div class="card-grid" id="gridProfesores"></div>
+      </div>
+    </section>
+
+    <!-- TESORERIA -->
+    <section class="section" id="sec-tesoreria">
+      <div class="stat-grid" id="tesGrid"></div>
+      <div class="panel">
+        <div class="toolbar">
+          <select id="filtroPago">
+            <option value="todos">Todos los estados</option>
+            <option value="pagado">Pagados</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="parcial">Parciales</option>
+          </select>
+        </div>
+        <table>
+          <thead><tr><th>Alumno</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody id="tablaPagos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MIS PAGOS (alumno) -->
+    <section class="section" id="sec-mispagos">
+      <div class="panel">
+        <h2>Mis pagos</h2>
+        <table>
+          <thead><tr><th>Concepto</th><th>Monto</th><th>Método</th><th>Estado</th><th>Fecha</th></tr></thead>
+          <tbody id="tablaMisPagos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ASISTENCIA -->
+    <section class="section" id="sec-asistencia">
+      <div class="panel" id="panelAsistenciaHoy">
+        <h2 id="asistenciaHoyTitulo">Asistencia de hoy</h2>
+        <table>
+          <thead><tr><th>Curso</th><th>Alumno</th><th>Profesor</th><th>Aula</th><th>Acciones</th></tr></thead>
+          <tbody id="tablaAsistenciaHoy"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h2>Historial de asistencia</h2>
+        <table>
+          <thead><tr><th>Alumno</th><th>Curso</th><th>Profesor</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody id="tablaHistorialAsistencia"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MI FICHA (alumno) -->
+    <section class="section" id="sec-ficha">
+      <div id="fichaAlumnoWrap"></div>
+    </section>
+
+    <!-- REPORTES -->
+    <section class="section" id="sec-reportes">
+      <div class="report-grid">
+        <div class="report-card">
+          <h3>Alumnos por curso</h3>
+          <p>Distribución de matriculados según instrumento.</p>
+          <button class="ghost">Exportar PDF</button>
+        </div>
+        <div class="report-card">
+          <h3>Ingresos mensuales</h3>
+          <p>Detalle de tesorería por mes y estado de pago.</p>
+          <button class="ghost">Exportar Excel</button>
+        </div>
+        <div class="report-card">
+          <h3>Asistencia por profesor</h3>
+          <p>Clases dictadas vs. clases programadas.</p>
+          <button class="ghost">Exportar PDF</button>
+        </div>
+        <div class="report-card">
+          <h3>Matrículas pendientes</h3>
+          <p>Alumnos con pagos pendientes o parciales.</p>
+          <button class="ghost">Exportar Excel</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) cerrarModal()">
+  <div class="modal">
+    <h2 id="modalTitulo">Agregar clase</h2>
+    <div class="modal-sub" id="modalSub"></div>
+    <div class="modal-msg" id="modalMsg" style="display:none;"></div>
+    <div class="field">
+      <label>Curso / instrumento</label>
+      <select id="modalCurso"></select>
+    </div>
+    <div class="field">
+      <label>Profesor</label>
+      <select id="modalProfesor"></select>
+    </div>
+    <div class="field">
+      <label>Aula / sala</label>
+      <select id="modalAula"></select>
+    </div>
+    <div class="field">
+      <label>Alumno</label>
+      <input type="text" id="modalAlumno" placeholder="Nombre del alumno">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-icon danger" id="btnEliminarClase" onclick="eliminarClase()" style="display:none;">Eliminar clase</button>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="ghost" onclick="cerrarModal()">Cancelar</button>
+        <button class="primary" onclick="guardarClase()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="fichaOverlay" onclick="if(event.target===this) cerrarFicha()">
+  <div class="modal" style="width:520px;max-height:82vh;overflow-y:auto;">
+    <h2 id="fichaTitulo">Ficha de alumno</h2>
+    <div class="modal-sub" id="fichaSub"></div>
+    <div id="fichaBody"></div>
+    <div class="modal-actions">
+      <div></div>
+      <button class="ghost" onclick="cerrarFicha()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- DATA (en memoria — datos de ejemplo) ---------------- */
+const cursos = ["Piano","Guitarra","Canto","Batería","Violín","Bajo"];
+
+const horasOrder = ["2:00pm","3:00pm","4:00pm","5:00pm","6:00pm","7:00pm","8:00pm","9:00pm"];
+function horaIndex(h){ return horasOrder.indexOf(h); }
+
+let profesores = [
+  {id:1, nombre:"María Rojas", instrumento:"Piano", cursos:["Piano","Canto"], dias:["Lun","Mar","Mié","Jue","Vie"], desde:"3:00pm", hasta:"8:00pm", telefono:"987 111 222"},
+  {id:2, nombre:"Jorge Huamán", instrumento:"Guitarra", cursos:["Guitarra","Bajo"], dias:["Mar","Mié","Jue","Vie","Sáb"], desde:"2:00pm", hasta:"7:00pm", telefono:"987 222 333"},
+  {id:3, nombre:"Lucía Fernández", instrumento:"Canto", cursos:["Canto"], dias:["Lun","Mar","Mié","Jue","Vie"], desde:"4:00pm", hasta:"9:00pm", telefono:"987 333 444"},
+  {id:4, nombre:"Ricardo Paz", instrumento:"Batería", cursos:["Batería"], dias:["Mié","Jue","Vie","Sáb"], desde:"3:00pm", hasta:"8:00pm", telefono:"987 444 555"},
+  {id:5, nombre:"Ana Torres", instrumento:"Violín", cursos:["Violín"], dias:["Lun","Mar","Mié","Jue"], desde:"3:00pm", hasta:"7:00pm", telefono:"987 555 666"},
+];
+function dispText(p){ return p.dias.join(",") + " " + p.desde + "-" + p.hasta; }
+
+let alumnos = [
+  {id:1, nombre:"Diego Salas", instrumento:"Guitarra", nivel:"Intermedio", profesorId:2, estado:"activo", ingreso:"2025-03-10", notas:""},
+  {id:2, nombre:"Camila Vidal", instrumento:"Piano", nivel:"Básico", profesorId:1, estado:"activo", ingreso:"2025-05-02", notas:""},
+  {id:3, nombre:"Mateo Ríos", instrumento:"Batería", nivel:"Avanzado", profesorId:4, estado:"activo", ingreso:"2024-11-20", notas:""},
+  {id:4, nombre:"Valentina Cruz", instrumento:"Canto", nivel:"Básico", profesorId:3, estado:"inactivo", ingreso:"2025-01-15", notas:""},
+  {id:5, nombre:"Sebastián Luna", instrumento:"Violín", nivel:"Intermedio", profesorId:5, estado:"activo", ingreso:"2025-06-30", notas:""},
+  {id:6, nombre:"Rafaela Ponce", instrumento:"Piano", nivel:"Intermedio", profesorId:1, estado:"activo", ingreso:"2025-02-18", notas:""},
+];
+
+let matriculas = [
+  {id:1, alumno:"Diego Salas", curso:"Guitarra", profesor:"Jorge Huamán", monto:180, estado:"pagado", fecha:"2026-07-01"},
+  {id:2, alumno:"Camila Vidal", curso:"Piano", profesor:"María Rojas", monto:200, estado:"pendiente", fecha:"2026-07-03"},
+  {id:3, alumno:"Mateo Ríos", curso:"Batería", profesor:"Ricardo Paz", monto:190, estado:"pagado", fecha:"2026-07-05"},
+  {id:4, alumno:"Sebastián Luna", curso:"Violín", profesor:"Ana Torres", monto:210, estado:"parcial", fecha:"2026-07-08"},
+];
+
+let pagos = [
+  {id:1, alumno:"Diego Salas", concepto:"Mensualidad julio", monto:180, metodo:"Yape", estado:"pagado", fecha:"2026-07-01"},
+  {id:2, alumno:"Camila Vidal", concepto:"Mensualidad julio", monto:200, metodo:"Transferencia", estado:"pendiente", fecha:"2026-07-03"},
+  {id:3, alumno:"Mateo Ríos", concepto:"Mensualidad julio", monto:190, metodo:"Efectivo", estado:"pagado", fecha:"2026-07-05"},
+  {id:4, alumno:"Sebastián Luna", concepto:"Mensualidad julio", monto:210, metodo:"Yape", estado:"parcial", fecha:"2026-07-08"},
+  {id:5, alumno:"Valentina Cruz", concepto:"Matrícula", monto:120, metodo:"Efectivo", estado:"pagado", fecha:"2026-06-20"},
+  {id:6, alumno:"Rafaela Ponce", concepto:"Mensualidad julio", monto:200, metodo:"Transferencia", estado:"pendiente", fecha:"2026-07-10"},
+];
+
+const ingresosMensuales = [
+  {mes:"Feb", monto:3200},{mes:"Mar", monto:3600},{mes:"Abr", monto:3450},
+  {mes:"May", monto:3900},{mes:"Jun", monto:4100},{mes:"Jul", monto:4380},
+];
+
+const dias = ["Lun","Mar","Mié","Jue","Vie","Sáb"];
+const horas = ["3:00pm","4:00pm","5:00pm","6:00pm","7:00pm"];
+const aulas = ["Aula 1","Aula 2","Aula 3","Sala de Ensayo"];
+
+let horario = [
+  {id:1, dia:"Lun", hora:"4:00pm", curso:"Piano", profesor:"María Rojas", alumno:"Camila Vidal", aula:"Aula 1"},
+  {id:2, dia:"Lun", hora:"6:00pm", curso:"Guitarra", profesor:"Jorge Huamán", alumno:"Diego Salas", aula:"Aula 2"},
+  {id:3, dia:"Mar", hora:"5:00pm", curso:"Violín", profesor:"Ana Torres", alumno:"Sebastián Luna", aula:"Aula 3"},
+  {id:4, dia:"Mié", hora:"3:00pm", curso:"Batería", profesor:"Ricardo Paz", alumno:"Mateo Ríos", aula:"Sala de Ensayo"},
+  {id:5, dia:"Mié", hora:"6:00pm", curso:"Piano", profesor:"María Rojas", alumno:"Rafaela Ponce", aula:"Aula 1"},
+  {id:6, dia:"Jue", hora:"4:00pm", curso:"Guitarra", profesor:"Jorge Huamán", alumno:"Diego Salas", aula:"Aula 2"},
+  {id:7, dia:"Vie", hora:"5:00pm", curso:"Canto", profesor:"Lucía Fernández", alumno:"Valentina Cruz", aula:"Aula 1"},
+  {id:8, dia:"Sáb", hora:"3:00pm", curso:"Batería", profesor:"Ricardo Paz", alumno:"Mateo Ríos", aula:"Sala de Ensayo"},
+];
+
+let asistencias = [
+  {id:1, horarioId:1, alumno:"Camila Vidal", curso:"Piano", profesor:"María Rojas", fecha:"2026-08-03", estado:"presente"},
+  {id:2, horarioId:2, alumno:"Diego Salas", curso:"Guitarra", profesor:"Jorge Huamán", fecha:"2026-08-03", estado:"falta"},
+  {id:3, horarioId:6, alumno:"Diego Salas", curso:"Guitarra", profesor:"Jorge Huamán", fecha:"2026-08-06", estado:"presente"},
+  {id:4, horarioId:4, alumno:"Mateo Ríos", curso:"Batería", profesor:"Ricardo Paz", fecha:"2026-08-05", estado:"presente"},
+];
+
+/* ---------------- ROLE CONFIG ---------------- */
+const navByRole = {
+  admin: [
+    {id:"dashboard", label:"Dashboard"},
+    {id:"alumnos", label:"Alumnos"},
+    {id:"matricula", label:"Matrícula"},
+    {id:"horarios", label:"Horarios"},
+    {id:"asistencia", label:"Asistencia"},
+    {id:"profesores", label:"Profesores"},
+    {id:"tesoreria", label:"Tesorería"},
+    {id:"reportes", label:"Reportes"},
+  ],
+  profesor: [
+    {id:"dashboard", label:"Dashboard"},
+    {id:"alumnos", label:"Mis alumnos"},
+    {id:"horarios", label:"Mi horario"},
+    {id:"asistencia", label:"Asistencia"},
+  ],
+  alumno: [
+    {id:"dashboard", label:"Dashboard"},
+    {id:"horarios", label:"Mi horario"},
+    {id:"asistencia", label:"Mi asistencia"},
+    {id:"ficha", label:"Mi ficha"},
+    {id:"mispagos", label:"Mis pagos"},
+  ],
+};
+const roleLabels = {admin:"Panel administrador", profesor:"Panel del profesor", alumno:"Panel del alumno"};
+const currentProfesor = profesores[0]; // María Rojas
+const currentAlumno = alumnos[0]; // Diego Salas
+
+let state = {role:"admin", section:"dashboard"};
+
+/* ---------------- RENDER: NAV ---------------- */
+function renderNav(){
+  const nav = document.getElementById("navlist");
+  nav.innerHTML = "";
+  navByRole[state.role].forEach(item=>{
+    const btn = document.createElement("button");
+    btn.className = "navlink" + (state.section===item.id ? " active":"");
+    btn.innerHTML = `<span class="dot"></span> ${item.label}`;
+    btn.onclick = ()=>{ state.section=item.id; render(); };
+    nav.appendChild(btn);
+  });
+  document.getElementById("roleLabel").textContent = roleLabels[state.role];
+}
+
+/* ---------------- RENDER: TOP BAR / SECTIONS TOGGLE ---------------- */
+const titles = {dashboard:"Dashboard", alumnos:"Alumnos", matricula:"Matrícula", horarios:"Horarios",
+  profesores:"Profesores", tesoreria:"Tesorería", reportes:"Reportes", mispagos:"Mis pagos",
+  asistencia:"Asistencia", ficha:"Mi ficha"};
+
+function showSection(){
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  const map = {dashboard:"sec-dashboard", alumnos:"sec-alumnos", matricula:"sec-matricula",
+    horarios:"sec-horarios", profesores:"sec-profesores", tesoreria:"sec-tesoreria",
+    reportes:"sec-reportes", mispagos:"sec-mispagos", asistencia:"sec-asistencia", ficha:"sec-ficha"};
+  document.getElementById(map[state.section]).classList.add("active");
+  let title = titles[state.section];
+  if(state.role==="profesor" && state.section==="alumnos") title="Mis alumnos";
+  if(state.role==="profesor" && state.section==="horarios") title="Mi horario";
+  if(state.role==="alumno" && state.section==="horarios") title="Mi horario";
+  if(state.role==="alumno" && state.section==="asistencia") title="Mi asistencia";
+  document.getElementById("pageTitle").textContent = title;
+}
+
+/* ---------------- DASHBOARD ---------------- */
+function renderDashboard(){
+  const grid = document.getElementById("statGrid");
+  const activos = alumnos.filter(a=>a.estado==="activo").length;
+  const ingresoMes = pagos.filter(p=>p.estado==="pagado").reduce((s,p)=>s+p.monto,0);
+  const pendientes = pagos.filter(p=>p.estado!=="pagado").length;
+
+  if(state.role==="admin"){
+    grid.innerHTML = `
+      ${statCard("Alumnos activos", activos, "de " + alumnos.length + " matriculados")}
+      ${statCard("Ingresos del mes", "S/ " + ingresoMes.toLocaleString(), "pagos confirmados")}
+      ${statCard("Clases hoy", horario.filter(h=>h.dia===diaActual()).length, "según horario semanal")}
+      ${statCard("Pagos pendientes", pendientes, "requieren seguimiento")}
+    `;
+    document.getElementById("agendaTitle").textContent = "Clases de hoy";
+    renderAgenda(horario.filter(h=>h.dia===diaActual()));
+  } else if(state.role==="profesor"){
+    const misAlumnos = alumnos.filter(a=>a.profesorId===currentProfesor.id);
+    const misClasesHoy = horario.filter(h=>h.profesor===currentProfesor.nombre && h.dia===diaActual());
+    grid.innerHTML = `
+      ${statCard("Mis alumnos", misAlumnos.length, "asignados actualmente")}
+      ${statCard("Clases hoy", misClasesHoy.length, dispText(currentProfesor))}
+      ${statCard("Instrumento", currentProfesor.instrumento, dispText(currentProfesor))}
+    `;
+    document.getElementById("agendaTitle").textContent = "Mis clases de hoy";
+    renderAgenda(misClasesHoy);
+  } else {
+    const misPagos = pagos.filter(p=>p.alumno===currentAlumno.nombre);
+    const proxClase = horario.find(h=>h.alumno===currentAlumno.nombre);
+    grid.innerHTML = `
+      ${statCard("Mi instrumento", currentAlumno.instrumento, "nivel " + currentAlumno.nivel)}
+      ${statCard("Próxima clase", proxClase ? proxClase.dia+" "+proxClase.hora : "—", proxClase ? "con "+proxClase.profesor : "")}
+      ${statCard("Estado de pagos", misPagos.some(p=>p.estado!=="pagado") ? "Pendiente" : "Al día", "mensualidad actual")}
+    `;
+    document.getElementById("agendaTitle").textContent = "Mi próxima clase";
+    renderAgenda(horario.filter(h=>h.alumno===currentAlumno.nombre).slice(0,3));
+  }
+
+  // chart (visible sólo si admin, oculto para otros roles vía CSS del panel padre)
+  const chartWrap = document.getElementById("chartIngresos").parentElement;
+  if(state.role==="admin"){
+    chartWrap.style.display="block";
+    renderChart();
+  } else {
+    chartWrap.style.display="none";
+  }
+}
+function statCard(label,value,sub){
+  return `<div class="stat-card"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
+}
+function diaActual(){
+  const idx = new Date().getDay(); // 0 dom
+  const map = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+  return map[idx]==="Dom" ? "Lun" : map[idx]; // fallback a Lun si es domingo (sin clases)
+}
+function renderAgenda(items){
+  const list = document.getElementById("agendaList");
+  if(!items.length){
+    list.innerHTML = `<div class="empty"><div class="staff"></div>No hay clases programadas.</div>`;
+    return;
+  }
+  list.innerHTML = items.map(h=>`
+    <li class="agenda-item">
+      <span class="agenda-time">${h.hora}</span>
+      <span>${h.curso} — ${h.alumno!==currentAlumno.nombre ? h.alumno : ''} ${h.profesor!==currentProfesor.nombre ? '· '+h.profesor : ''}</span>
+    </li>`).join("");
+}
+function renderChart(){
+  const max = Math.max(...ingresosMensuales.map(i=>i.monto));
+  document.getElementById("chartIngresos").innerHTML = ingresosMensuales.map(i=>`
+    <div class="bar-col">
+      <div class="bar" style="height:${(i.monto/max*100).toFixed(0)}%"></div>
+      <div class="bar-label">${i.mes}</div>
+    </div>`).join("");
+}
+
+/* ---------------- ALUMNOS ---------------- */
+let editingAlumnoId = null;
+const niveles = ["Básico","Intermedio","Avanzado"];
+
+function renderAlumnos(filterText=""){
+  let lista = state.role==="profesor" ? alumnos.filter(a=>a.profesorId===currentProfesor.id) : alumnos;
+  if(filterText){
+    const f = filterText.toLowerCase();
+    lista = lista.filter(a=>a.nombre.toLowerCase().includes(f) || a.instrumento.toLowerCase().includes(f));
+  }
+  const editable = state.role !== "alumno";
+  const panel = document.getElementById('panelNuevoAlumno');
+  if(editable){
+    panel.style.display = 'block';
+    if(state.role==='profesor'){
+      document.getElementById('panelNuevoAlumnoTitulo').textContent = 'Agregar alumno a mi cartera';
+      const activos = alumnos.filter(x=>x.estado==='activo');
+      document.getElementById('nvAlNombreWrap').innerHTML = `<label>Alumno activo</label><select id="nvAlNombre">${
+        activos.length ? activos.map(x=>`<option value="${x.id}">${x.nombre} (${x.instrumento})</option>`).join('')
+        : '<option value="">— sin alumnos activos —</option>'
+      }</select>`;
+      document.getElementById('nvAlInstrumentoWrap').style.display = 'none';
+      document.getElementById('nvAlNivelWrap').style.display = 'none';
+      document.getElementById('nvAlProfesorWrap').style.display = 'none';
+    } else {
+      document.getElementById('panelNuevoAlumnoTitulo').textContent = 'Nuevo alumno';
+      document.getElementById('nvAlNombreWrap').innerHTML = `<label>Nombre</label><input type="text" id="nvAlNombre" placeholder="Nombre completo">`;
+      document.getElementById('nvAlInstrumentoWrap').style.display = '';
+      document.getElementById('nvAlNivelWrap').style.display = '';
+      document.getElementById('nvAlProfesorWrap').style.display = '';
+      document.getElementById('nvAlInstrumento').innerHTML = cursos.map(c=>`<option value="${c}">${c}</option>`).join('');
+      document.getElementById('nvAlNivel').innerHTML = niveles.map(n=>`<option>${n}</option>`).join('');
+      actualizarProfesoresPorInstrumento();
+    }
+  } else {
+    panel.style.display = 'none';
+  }
+
+  const body = document.getElementById("tablaAlumnos");
+  if(!lista.length){
+    body.innerHTML = `<tr><td colspan="7" class="empty"><div class="staff"></div>No se encontraron alumnos.</td></tr>`;
+    return;
+  }
+  body.innerHTML = lista.map(a=>{
+    const prof = profesores.find(p=>p.id===a.profesorId);
+    if(editable && editingAlumnoId===a.id){
+      return `<tr>
+        <td><input type="text" id="edAlNombre" value="${a.nombre}"></td>
+        <td><select id="edAlInstrumento" onchange="actualizarProfesorEdicion()">${cursos.map(c=>`<option value="${c}" ${c===a.instrumento?'selected':''}>${c}</option>`).join('')}</select></td>
+        <td><select id="edAlNivel">${niveles.map(n=>`<option ${n===a.nivel?'selected':''}>${n}</option>`).join('')}</select></td>
+        <td><select id="edAlProfesor">${profesoresParaInstrumentoConActual(a.instrumento, a.profesorId).map(p=>`<option value="${p.id}" ${p.id===a.profesorId?'selected':''}>${p.nombre}</option>`).join('')}</select></td>
+        <td><select id="edAlEstado"><option value="activo" ${a.estado==='activo'?'selected':''}>activo</option><option value="inactivo" ${a.estado==='inactivo'?'selected':''}>inactivo</option></select></td>
+        <td class="mono">${a.ingreso}</td>
+        <td class="actions-cell">
+          <button class="btn-icon" onclick="guardarAlumno(${a.id})">Guardar</button>
+          <button class="btn-icon" onclick="editingAlumnoId=null; renderAlumnos(document.getElementById('buscarAlumno').value)">Cancelar</button>
+        </td>
+      </tr>`;
+    }
+    return `<tr>
+      <td>${editable ? `<button class="btn-icon" style="border:none;padding:0;background:none;color:var(--olive-deep);font-weight:600;" onclick="abrirFicha('${a.nombre}')">${a.nombre}</button>` : a.nombre}</td>
+      <td>${a.instrumento}</td>
+      <td>${a.nivel}</td>
+      <td>${prof ? prof.nombre : "—"}</td>
+      <td><span class="badge ${a.estado==='activo'?'ok':'no'}">${a.estado}</span></td>
+      <td class="mono">${a.ingreso}</td>
+      <td class="actions-cell">${editable ? `
+        <button class="btn-icon" onclick="editingAlumnoId=${a.id}; renderAlumnos(document.getElementById('buscarAlumno').value)">Editar</button>
+        <button class="btn-icon danger" onclick="eliminarAlumno(${a.id})">Eliminar</button>` : ''}</td>
+    </tr>`;
+  }).join("");
+}
+
+function guardarAlumno(id){
+  const a = alumnos.find(x=>x.id===id);
+  if(!a) return;
+  const nombre = document.getElementById('edAlNombre').value.trim();
+  if(!nombre){ alert('El nombre no puede estar vacío.'); return; }
+  a.nombre = nombre;
+  a.instrumento = document.getElementById('edAlInstrumento').value;
+  a.nivel = document.getElementById('edAlNivel').value;
+  a.profesorId = parseInt(document.getElementById('edAlProfesor').value);
+  a.estado = document.getElementById('edAlEstado').value;
+  editingAlumnoId = null;
+  renderAlumnos(document.getElementById('buscarAlumno').value);
+}
+function eliminarAlumno(id){
+  if(!confirm('¿Eliminar este alumno? Esta acción no se puede deshacer.')) return;
+  alumnos = alumnos.filter(a=>a.id!==id);
+  renderAlumnos(document.getElementById('buscarAlumno').value);
+}
+function actualizarProfesoresPorInstrumento(){
+  const sel = document.getElementById('nvAlInstrumento');
+  if(!sel) return;
+  const instrumento = sel.value;
+  const filtrados = profesores.filter(p=>p.cursos.includes(instrumento));
+  document.getElementById('nvAlProfesor').innerHTML = filtrados.length
+    ? filtrados.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')
+    : '<option value="">— sin profesores para este instrumento —</option>';
+}
+function profesoresParaInstrumentoConActual(instrumento, actualId){
+  let lista = profesores.filter(p=>p.cursos.includes(instrumento));
+  if(actualId && !lista.find(p=>p.id===actualId)){
+    const actual = profesores.find(p=>p.id===actualId);
+    if(actual) lista = [actual, ...lista];
+  }
+  return lista;
+}
+function actualizarProfesorEdicion(){
+  const instrumento = document.getElementById('edAlInstrumento').value;
+  const filtrados = profesores.filter(p=>p.cursos.includes(instrumento));
+  document.getElementById('edAlProfesor').innerHTML = filtrados.length
+    ? filtrados.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')
+    : '<option value="">— sin profesores para este instrumento —</option>';
+}
+function agregarAlumnoNuevo(){
+  if(state.role==='profesor'){
+    const id = parseInt(document.getElementById('nvAlNombre').value);
+    const a = alumnos.find(x=>x.id===id);
+    if(!a){ alert('Selecciona un alumno activo de la lista.'); return; }
+    a.profesorId = currentProfesor.id;
+    renderAlumnos(document.getElementById('buscarAlumno').value);
+    return;
+  }
+  const nombre = document.getElementById('nvAlNombre').value.trim();
+  if(!nombre){ alert('Ingresa el nombre del alumno.'); return; }
+  const instrumento = document.getElementById('nvAlInstrumento').value;
+  const nivel = document.getElementById('nvAlNivel').value;
+  const profesorSel = document.getElementById('nvAlProfesor').value;
+  if(!profesorSel){ alert('No hay profesores disponibles para este instrumento.'); return; }
+  const profesorId = parseInt(profesorSel);
+  alumnos.unshift({id:Date.now(), nombre, instrumento, nivel, profesorId, estado:'activo', ingreso:new Date().toISOString().slice(0,10), notas:''});
+  renderAlumnos(document.getElementById('buscarAlumno').value);
+}
+
+/* ---------------- MATRICULA ---------------- */
+function fillMatriculaSelects(){
+  const cursoSel = document.getElementById("matCurso");
+  const profSel = document.getElementById("matProfesor");
+  const nombreSel = document.getElementById("matNombre");
+  const activos = alumnos.filter(a=>a.estado==='activo');
+  nombreSel.innerHTML = activos.length
+    ? activos.map(a=>`<option value="${a.nombre}">${a.nombre} (${a.instrumento})</option>`).join("")
+    : '<option value="">— sin alumnos activos —</option>';
+  cursoSel.innerHTML = cursos.map(c=>`<option value="${c}">${c}</option>`).join("");
+  profSel.innerHTML = profesores.map(p=>`<option value="${p.nombre}">${p.nombre}</option>`).join("");
+}
+let editingMatriculaId = null;
+function renderMatriculas(){
+  const body = document.getElementById("tablaMatriculas");
+  body.innerHTML = matriculas.map(m=>{
+    if(editingMatriculaId===m.id){
+      return `<tr>
+        <td><input type="text" id="edMatAlumno" value="${m.alumno}"></td>
+        <td><select id="edMatCurso">${cursos.map(c=>`<option ${c===m.curso?'selected':''}>${c}</option>`).join('')}</select></td>
+        <td><select id="edMatProfesor">${profesores.map(p=>`<option ${p.nombre===m.profesor?'selected':''}>${p.nombre}</option>`).join('')}</select></td>
+        <td><input type="number" id="edMatMonto" value="${m.monto}" style="width:80px;"></td>
+        <td><select id="edMatEstado">${['pagado','pendiente','parcial'].map(s=>`<option ${s===m.estado?'selected':''}>${s}</option>`).join('')}</select></td>
+        <td class="mono">${m.fecha}</td>
+        <td class="actions-cell">
+          <button class="btn-icon" onclick="guardarMatricula(${m.id})">Guardar</button>
+          <button class="btn-icon" onclick="editingMatriculaId=null; renderMatriculas()">Cancelar</button>
+        </td>
+      </tr>`;
+    }
+    return `<tr>
+      <td>${m.alumno}</td><td>${m.curso}</td><td>${m.profesor}</td>
+      <td class="mono">S/ ${m.monto}</td>
+      <td><span class="badge ${m.estado==='pagado'?'ok':m.estado==='parcial'?'pend':'no'}">${m.estado}</span></td>
+      <td class="mono">${m.fecha}</td>
+      <td class="actions-cell">
+        <button class="btn-icon" onclick="editingMatriculaId=${m.id}; renderMatriculas()">Editar</button>
+        <button class="btn-icon danger" onclick="eliminarMatricula(${m.id})">Eliminar</button>
+      </td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="7" class="empty"><div class="staff"></div>Sin matrículas registradas.</td></tr>`;
+}
+function guardarMatricula(id){
+  const m = matriculas.find(x=>x.id===id);
+  if(!m) return;
+  m.alumno = document.getElementById('edMatAlumno').value.trim() || m.alumno;
+  m.curso = document.getElementById('edMatCurso').value;
+  m.profesor = document.getElementById('edMatProfesor').value;
+  m.monto = parseFloat(document.getElementById('edMatMonto').value) || m.monto;
+  m.estado = document.getElementById('edMatEstado').value;
+  editingMatriculaId = null;
+  renderMatriculas();
+}
+function eliminarMatricula(id){
+  if(!confirm('¿Eliminar esta matrícula?')) return;
+  matriculas = matriculas.filter(m=>m.id!==id);
+  renderMatriculas();
+}
+function registrarMatricula(){
+  const nombre = document.getElementById("matNombre").value;
+  const curso = document.getElementById("matCurso").value;
+  const profesor = document.getElementById("matProfesor").value;
+  const monto = parseFloat(document.getElementById("matMonto").value) || 0;
+  if(!nombre || !monto){ alert("Selecciona un alumno e ingresa el monto."); return; }
+  matriculas.unshift({id:Date.now(), alumno:nombre, curso, profesor, monto, estado:"pendiente", fecha:new Date().toISOString().slice(0,10)});
+  document.getElementById("matMonto").value="";
+  renderMatriculas();
+}
+
+/* ---------------- HORARIOS ---------------- */
+function renderHorario(){
+  let items = horario;
+  if(state.role==="profesor") items = horario.filter(h=>h.profesor===currentProfesor.nombre);
+  if(state.role==="alumno") items = horario.filter(h=>h.alumno===currentAlumno.nombre);
+
+  const editable = state.role==="admin";
+  document.getElementById("horarioTitle").textContent =
+    editable ? "Horario semanal — toda la academia (clic en una celda para agregar o editar una clase)" :
+    "Mi horario semanal";
+
+  const grid = document.getElementById("weekGrid");
+  let html = `<div class="cell head" style="background:var(--olive-deep);"></div>` + dias.map(d=>`<div class="cell head">${d}</div>`).join("");
+  horas.forEach(hr=>{
+    html += `<div class="cell time-label">${hr}</div>`;
+    dias.forEach(d=>{
+      const clases = items.filter(h=>h.dia===d && h.hora===hr);
+      const cellClass = editable && !clases.length ? "cell slot-empty" : "cell";
+      const cellClick = editable ? ` onclick="abrirModalClase('${d}','${hr}')"` : "";
+      const chips = clases.map(c=>{
+        const chipClick = editable ? ` onclick="event.stopPropagation(); editarClasePorId(${c.id})"` : "";
+        return `<div class="class-chip"${chipClick}>${c.curso}<small>${state.role==='admin' ? c.alumno : (state.role==='profesor'?c.alumno:c.profesor)}</small><small>${c.aula||''}</small></div>`;
+      }).join("");
+      html += `<div class="${cellClass}"${cellClick}>${chips}</div>`;
+    });
+  });
+  grid.innerHTML = html;
+}
+
+/* ---- Modal de horario: agregar/editar clase con validación de disponibilidad ---- */
+let modalContext = null; // {dia, hora, editId}
+
+function editarClasePorId(id){
+  const item = horario.find(h=>h.id===id);
+  if(item) abrirModalClase(item.dia, item.hora, item);
+}
+
+function abrirModalClase(dia, hora, existing=null){
+  modalContext = {dia, hora, editId: existing ? existing.id : null};
+  document.getElementById('modalTitulo').textContent = existing ? 'Editar clase' : 'Agregar clase';
+  document.getElementById('modalSub').textContent = dia + ' · ' + hora;
+  document.getElementById('modalCurso').innerHTML = cursos.map(c=>`<option value="${c}" ${existing && existing.curso===c ? 'selected':''}>${c}</option>`).join('');
+  document.getElementById('modalAula').innerHTML = aulas.map(au=>`<option value="${au}" ${existing && existing.aula===au ? 'selected':''}>${au}</option>`).join('');
+  document.getElementById('modalAlumno').value = existing ? existing.alumno : '';
+  document.getElementById('btnEliminarClase').style.display = existing ? 'inline-block' : 'none';
+  poblarProfesoresModal();
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function cerrarModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  modalContext = null;
+}
+function poblarProfesoresModal(){
+  if(!modalContext) return;
+  const {dia, hora, editId} = modalContext;
+  const curso = document.getElementById('modalCurso').value;
+  const existing = editId ? horario.find(h=>h.id===editId) : null;
+  const sel = document.getElementById('modalProfesor');
+  let disponibles = profesores.filter(p=>{
+    const enHorario = p.dias.includes(dia) && horaIndex(hora)>=horaIndex(p.desde) && horaIndex(hora)<horaIndex(p.hasta);
+    const libre = !horario.some(h=>h.dia===dia && h.hora===hora && h.profesor===p.nombre && h.id!==editId);
+    const dictaCurso = p.cursos.includes(curso);
+    return enHorario && libre && dictaCurso;
+  });
+  if(existing && existing.curso===curso && !disponibles.find(p=>p.nombre===existing.profesor)){
+    const actual = profesores.find(p=>p.nombre===existing.profesor);
+    if(actual) disponibles.unshift(actual);
+  }
+  const msg = document.getElementById('modalMsg');
+  if(!disponibles.length){
+    sel.innerHTML = '<option value="">— sin profesores disponibles —</option>';
+    msg.textContent = 'No hay profesores de ' + curso + ' disponibles en este horario. Elige otro día, hora o curso.';
+    msg.className = 'modal-msg warn';
+    msg.style.display = 'block';
+  } else {
+    sel.innerHTML = disponibles.map(p=>`<option value="${p.nombre}" ${existing && existing.profesor===p.nombre ? 'selected':''}>${p.nombre} (${p.instrumento})</option>`).join('');
+    msg.style.display = 'none';
+  }
+}
+function mostrarModalError(texto){
+  const msg = document.getElementById('modalMsg');
+  msg.textContent = texto;
+  msg.className = 'modal-msg err';
+  msg.style.display = 'block';
+}
+function guardarClase(){
+  const curso = document.getElementById('modalCurso').value;
+  const profesor = document.getElementById('modalProfesor').value;
+  const aula = document.getElementById('modalAula').value;
+  const alumno = document.getElementById('modalAlumno').value.trim();
+  if(!profesor){ mostrarModalError('Selecciona un profesor disponible para este horario.'); return; }
+  if(!alumno){ mostrarModalError('Ingresa el nombre del alumno.'); return; }
+  const conflicto = horario.some(h=>h.dia===modalContext.dia && h.hora===modalContext.hora && h.profesor===profesor && h.id!==modalContext.editId);
+  if(conflicto){ mostrarModalError('Ese profesor ya tiene una clase asignada en este horario.'); return; }
+  const conflictoAula = horario.some(h=>h.dia===modalContext.dia && h.hora===modalContext.hora && h.aula===aula && h.id!==modalContext.editId);
+  if(conflictoAula){ mostrarModalError('Esa aula ya está ocupada en este horario.'); return; }
+  if(modalContext.editId){
+    const item = horario.find(h=>h.id===modalContext.editId);
+    Object.assign(item, {curso, profesor, aula, alumno});
+  } else {
+    horario.push({id:Date.now(), dia:modalContext.dia, hora:modalContext.hora, curso, profesor, aula, alumno});
+  }
+  cerrarModal();
+  renderHorario();
+}
+function eliminarClase(){
+  if(!modalContext || !modalContext.editId) return;
+  if(!confirm('¿Eliminar esta clase del horario?')) return;
+  horario = horario.filter(h=>h.id!==modalContext.editId);
+  cerrarModal();
+  renderHorario();
+}
+
+/* ---------------- PROFESORES ---------------- */
+let editingProfesorId = null;
+function renderProfesores(){
+  document.getElementById("gridProfesores").innerHTML = profesores.map(p=>{
+    if(editingProfesorId===p.id){
+      return `<div class="prof-card">
+        <div class="field" style="margin-bottom:8px;"><label>Nombre</label><input type="text" id="edProfNombre" value="${p.nombre}"></div>
+        <div class="field" style="margin-bottom:8px;"><label>Instrumento principal</label><input type="text" id="edProfInstrumento" value="${p.instrumento}"></div>
+        <div class="field" style="margin-bottom:8px;"><label>Teléfono</label><input type="text" id="edProfTelefono" value="${p.telefono}"></div>
+        <div class="field" style="margin-bottom:8px;">
+          <label>Cursos que dicta</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${cursos.map(c=>`<label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" class="edProfCurso" value="${c}" ${p.cursos.includes(c)?'checked':''}> ${c}
+            </label>`).join('')}
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:8px;">
+          <label>Días disponibles</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${dias.map(d=>`<label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" class="edProfDia" value="${d}" ${p.dias.includes(d)?'checked':''}> ${d}
+            </label>`).join('')}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <div class="field" style="flex:1;margin-bottom:8px;"><label>Desde</label><select id="edProfDesde">${horasOrder.map(h=>`<option ${h===p.desde?'selected':''}>${h}</option>`).join('')}</select></div>
+          <div class="field" style="flex:1;margin-bottom:8px;"><label>Hasta</label><select id="edProfHasta">${horasOrder.map(h=>`<option ${h===p.hasta?'selected':''}>${h}</option>`).join('')}</select></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="btn-icon" onclick="guardarProfesor(${p.id})">Guardar</button>
+          <button class="btn-icon" onclick="editingProfesorId=null; renderProfesores()">Cancelar</button>
+        </div>
+      </div>`;
+    }
+    return `<div class="prof-card">
+      <div class="prof-avatar">${p.nombre.split(" ").map(n=>n[0]).slice(0,2).join("")}</div>
+      <h3>${p.nombre}</h3>
+      <div class="role">${p.instrumento}</div>
+      <div class="meta">
+        Cursos: ${p.cursos.join(", ")}<br>
+        Disponibilidad: ${dispText(p)}<br>
+        Contacto: ${p.telefono}
+      </div>
+      <div style="display:flex;gap:6px;margin-top:12px;">
+        <button class="btn-icon" onclick="editingProfesorId=${p.id}; renderProfesores()">Editar</button>
+        <button class="btn-icon danger" onclick="eliminarProfesor(${p.id})">Eliminar</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+function guardarProfesor(id){
+  const p = profesores.find(x=>x.id===id);
+  if(!p) return;
+  const cursosSel = [...document.querySelectorAll('.edProfCurso:checked')].map(el=>el.value);
+  const diasSel = [...document.querySelectorAll('.edProfDia:checked')].map(el=>el.value);
+  const desde = document.getElementById('edProfDesde').value;
+  const hasta = document.getElementById('edProfHasta').value;
+  if(!cursosSel.length){ alert('Selecciona al menos un curso que dicte.'); return; }
+  if(!diasSel.length){ alert('Selecciona al menos un día disponible.'); return; }
+  if(horaIndex(hasta) <= horaIndex(desde)){ alert('La hora "hasta" debe ser posterior a la hora "desde".'); return; }
+  p.nombre = document.getElementById('edProfNombre').value.trim() || p.nombre;
+  p.instrumento = document.getElementById('edProfInstrumento').value.trim() || p.instrumento;
+  p.telefono = document.getElementById('edProfTelefono').value.trim() || p.telefono;
+  p.cursos = cursosSel;
+  p.dias = diasSel;
+  p.desde = desde;
+  p.hasta = hasta;
+  editingProfesorId = null;
+  renderProfesores();
+}
+function eliminarProfesor(id){
+  if(!confirm('¿Eliminar este profesor? Sus clases asignadas en el horario quedarán sin profesor válido.')) return;
+  profesores = profesores.filter(x=>x.id!==id);
+  renderProfesores();
+}
+
+/* ---------------- TESORERIA ---------------- */
+function renderTesoreria(filtro="todos"){
+  const grid = document.getElementById("tesGrid");
+  const totalPagado = pagos.filter(p=>p.estado==="pagado").reduce((s,p)=>s+p.monto,0);
+  const totalPendiente = pagos.filter(p=>p.estado!=="pagado").reduce((s,p)=>s+p.monto,0);
+  grid.innerHTML = `
+    ${statCard("Total cobrado (julio)", "S/ "+totalPagado.toLocaleString(), pagos.filter(p=>p.estado==='pagado').length+" pagos")}
+    ${statCard("Por cobrar", "S/ "+totalPendiente.toLocaleString(), pagos.filter(p=>p.estado!=='pagado').length+" pendientes/parciales")}
+    ${statCard("Ticket promedio", "S/ "+Math.round(pagos.reduce((s,p)=>s+p.monto,0)/pagos.length), "por alumno")}
+  `;
+  let lista = filtro==="todos" ? pagos : pagos.filter(p=>p.estado===filtro);
+  document.getElementById("tablaPagos").innerHTML = lista.map(p=>{
+    if(editingPagoId===p.id){
+      return `<tr>
+        <td>${p.alumno}</td>
+        <td><input type="text" id="edPagConcepto" value="${p.concepto}"></td>
+        <td><input type="number" id="edPagMonto" value="${p.monto}" style="width:80px;"></td>
+        <td><select id="edPagMetodo">${['Yape','Transferencia','Efectivo'].map(m=>`<option ${m===p.metodo?'selected':''}>${m}</option>`).join('')}</select></td>
+        <td><select id="edPagEstado">${['pagado','pendiente','parcial'].map(s=>`<option ${s===p.estado?'selected':''}>${s}</option>`).join('')}</select></td>
+        <td class="mono">${p.fecha}</td>
+        <td class="actions-cell">
+          <button class="btn-icon" onclick="guardarPago(${p.id})">Guardar</button>
+          <button class="btn-icon" onclick="editingPagoId=null; renderTesoreria(document.getElementById('filtroPago').value)">Cancelar</button>
+        </td>
+      </tr>`;
+    }
+    return `<tr>
+      <td>${p.alumno}</td><td>${p.concepto}</td>
+      <td class="mono">S/ ${p.monto}</td><td>${p.metodo}</td>
+      <td><span class="badge ${p.estado==='pagado'?'ok':p.estado==='parcial'?'pend':'no'}">${p.estado}</span></td>
+      <td class="mono">${p.fecha}</td>
+      <td class="actions-cell">
+        <button class="btn-icon" onclick="editingPagoId=${p.id}; renderTesoreria(document.getElementById('filtroPago').value)">Editar</button>
+        <button class="btn-icon danger" onclick="eliminarPago(${p.id})">Eliminar</button>
+      </td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="7" class="empty"><div class="staff"></div>Sin resultados para este filtro.</td></tr>`;
+}
+let editingPagoId = null;
+function guardarPago(id){
+  const p = pagos.find(x=>x.id===id);
+  if(!p) return;
+  p.concepto = document.getElementById('edPagConcepto').value.trim() || p.concepto;
+  p.monto = parseFloat(document.getElementById('edPagMonto').value) || p.monto;
+  p.metodo = document.getElementById('edPagMetodo').value;
+  p.estado = document.getElementById('edPagEstado').value;
+  editingPagoId = null;
+  renderTesoreria(document.getElementById('filtroPago').value);
+}
+function eliminarPago(id){
+  if(!confirm('¿Eliminar este pago?')) return;
+  pagos = pagos.filter(x=>x.id!==id);
+  renderTesoreria(document.getElementById('filtroPago').value);
+}
+
+/* ---------------- MIS PAGOS (alumno) ---------------- */
+function renderMisPagos(){
+  const lista = pagos.filter(p=>p.alumno===currentAlumno.nombre);
+  document.getElementById("tablaMisPagos").innerHTML = lista.map(p=>`
+    <tr>
+      <td>${p.concepto}</td><td class="mono">S/ ${p.monto}</td><td>${p.metodo}</td>
+      <td><span class="badge ${p.estado==='pagado'?'ok':p.estado==='parcial'?'pend':'no'}">${p.estado}</span></td>
+      <td class="mono">${p.fecha}</td>
+    </tr>`).join("") || `<tr><td colspan="5" class="empty"><div class="staff"></div>Sin pagos registrados.</td></tr>`;
+}
+
+/* ---------------- ASISTENCIA ---------------- */
+let editingAsistenciaId = null;
+function renderAsistencia(){
+  const editable = state.role !== "alumno";
+  document.getElementById('panelAsistenciaHoy').style.display = editable ? 'block' : 'none';
+  if(editable){
+    const hoy = diaActual();
+    const fechaHoy = new Date().toISOString().slice(0,10);
+    document.getElementById('asistenciaHoyTitulo').textContent = "Asistencia de hoy (" + hoy + ")";
+    let clasesHoy = horario.filter(h=>h.dia===hoy);
+    if(state.role==='profesor') clasesHoy = clasesHoy.filter(h=>h.profesor===currentProfesor.nombre);
+    const body = document.getElementById('tablaAsistenciaHoy');
+    if(!clasesHoy.length){
+      body.innerHTML = `<tr><td colspan="5" class="empty"><div class="staff"></div>No hay clases programadas hoy.</td></tr>`;
+    } else {
+      body.innerHTML = clasesHoy.map(h=>{
+        const existente = asistencias.find(x=>x.horarioId===h.id && x.fecha===fechaHoy);
+        return `<tr>
+          <td>${h.curso}</td><td>${h.alumno}</td><td>${h.profesor}</td><td>${h.aula||'—'}</td>
+          <td class="actions-cell">
+            <select id="asisEstado_${h.id}">
+              <option value="presente" ${existente&&existente.estado==='presente'?'selected':''}>Presente</option>
+              <option value="falta" ${existente&&existente.estado==='falta'?'selected':''}>Falta</option>
+            </select>
+            <button class="btn-icon" onclick="guardarAsistenciaHoy(${h.id})">Guardar</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+  }
+  renderHistorialAsistencia();
+}
+function guardarAsistenciaHoy(horarioId){
+  const h = horario.find(x=>x.id===horarioId);
+  if(!h) return;
+  const estado = document.getElementById('asisEstado_'+horarioId).value;
+  const fechaHoy = new Date().toISOString().slice(0,10);
+  let rec = asistencias.find(x=>x.horarioId===horarioId && x.fecha===fechaHoy);
+  if(rec){ rec.estado = estado; }
+  else { asistencias.push({id:Date.now(), horarioId, alumno:h.alumno, curso:h.curso, profesor:h.profesor, fecha:fechaHoy, estado}); }
+  renderHistorialAsistencia();
+}
+function renderHistorialAsistencia(){
+  const editable = state.role !== "alumno";
+  let lista = state.role==='alumno' ? asistencias.filter(a=>a.alumno===currentAlumno.nombre)
+    : state.role==='profesor' ? asistencias.filter(a=>a.profesor===currentProfesor.nombre)
+    : asistencias;
+  lista = [...lista].sort((a,b)=> a.fecha < b.fecha ? 1 : -1);
+  document.getElementById('tablaHistorialAsistencia').innerHTML = lista.map(x=>{
+    if(editable && editingAsistenciaId===x.id){
+      return `<tr>
+        <td>${x.alumno}</td><td>${x.curso}</td><td>${x.profesor}</td>
+        <td><select id="edAsisEstado">
+          <option value="presente" ${x.estado==='presente'?'selected':''}>Presente</option>
+          <option value="falta" ${x.estado==='falta'?'selected':''}>Falta</option>
+        </select></td>
+        <td class="mono">${x.fecha}</td>
+        <td class="actions-cell">
+          <button class="btn-icon" onclick="guardarEdicionAsistencia(${x.id})">Guardar</button>
+          <button class="btn-icon" onclick="editingAsistenciaId=null; renderHistorialAsistencia()">Cancelar</button>
+        </td>
+      </tr>`;
+    }
+    return `<tr>
+      <td>${x.alumno}</td><td>${x.curso}</td><td>${x.profesor}</td>
+      <td><span class="badge ${x.estado==='presente'?'ok':'no'}">${x.estado}</span></td>
+      <td class="mono">${x.fecha}</td>
+      <td class="actions-cell">${editable?`
+        <button class="btn-icon" onclick="editingAsistenciaId=${x.id}; renderHistorialAsistencia()">Editar</button>
+        <button class="btn-icon danger" onclick="eliminarAsistencia(${x.id})">Eliminar</button>`:''}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="6" class="empty"><div class="staff"></div>Sin registros de asistencia.</td></tr>`;
+}
+function guardarEdicionAsistencia(id){
+  const x = asistencias.find(a=>a.id===id);
+  if(!x) return;
+  x.estado = document.getElementById('edAsisEstado').value;
+  editingAsistenciaId = null;
+  renderHistorialAsistencia();
+}
+function eliminarAsistencia(id){
+  if(!confirm('¿Eliminar este registro de asistencia?')) return;
+  asistencias = asistencias.filter(a=>a.id!==id);
+  renderHistorialAsistencia();
+}
+
+/* ---------------- FICHA DE ALUMNO ---------------- */
+function construirFichaHTML(a, prof, editableNotas){
+  const misPagos = pagos.filter(p=>p.alumno===a.nombre);
+  const misClases = horario.filter(h=>h.alumno===a.nombre);
+  const misAsistencias = asistencias.filter(x=>x.alumno===a.nombre);
+  return `
+    <div class="panel" style="padding:14px 16px;margin-bottom:14px;">
+      <h2 style="font-size:0.9rem;">Datos generales</h2>
+      <p style="font-size:0.84rem;color:var(--ink-soft);margin:6px 0 0;line-height:1.6;">
+        Instrumento: ${a.instrumento} · Nivel: ${a.nivel}<br>
+        Profesor asignado: ${prof?prof.nombre:'—'}<br>
+        Ingreso: ${a.ingreso} &nbsp; Estado: <span class="badge ${a.estado==='activo'?'ok':'no'}">${a.estado}</span>
+      </p>
+    </div>
+    <div class="panel" style="padding:14px 16px;margin-bottom:14px;">
+      <h2 style="font-size:0.9rem;">Notas del profesor</h2>
+      <textarea id="fichaNotas" ${editableNotas?'':'disabled'} placeholder="${editableNotas?'Progreso, observaciones…':'Sin notas registradas.'}" style="width:100%;min-height:60px;font-family:'Inter',sans-serif;font-size:0.82rem;padding:8px;border:1px solid var(--line);border-radius:8px;background:${editableNotas?'var(--white)':'var(--sage-bg)'};">${a.notas||''}</textarea>
+      ${editableNotas?`<button class="btn-icon" style="margin-top:8px;" onclick="guardarNotasFicha(${a.id})">Guardar notas</button>`:''}
+    </div>
+    <div class="panel" style="padding:14px 16px;margin-bottom:14px;">
+      <h2 style="font-size:0.9rem;">Horario asignado</h2>
+      ${misClases.length? `<table><thead><tr><th>Día</th><th>Hora</th><th>Curso</th><th>Aula</th></tr></thead><tbody>${misClases.map(c=>`<tr><td>${c.dia}</td><td>${c.hora}</td><td>${c.curso}</td><td>${c.aula||'—'}</td></tr>`).join('')}</tbody></table>` : `<p style="font-size:0.82rem;color:var(--ink-soft);">Sin clases asignadas.</p>`}
+    </div>
+    <div class="panel" style="padding:14px 16px;margin-bottom:14px;">
+      <h2 style="font-size:0.9rem;">Historial de pagos</h2>
+      ${misPagos.length? `<table><thead><tr><th>Concepto</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>${misPagos.map(p=>`<tr><td>${p.concepto}</td><td class="mono">S/ ${p.monto}</td><td><span class="badge ${p.estado==='pagado'?'ok':p.estado==='parcial'?'pend':'no'}">${p.estado}</span></td><td class="mono">${p.fecha}</td></tr>`).join('')}</tbody></table>` : `<p style="font-size:0.82rem;color:var(--ink-soft);">Sin pagos registrados.</p>`}
+    </div>
+    <div class="panel" style="padding:14px 16px;margin-bottom:0;">
+      <h2 style="font-size:0.9rem;">Historial de asistencia</h2>
+      ${misAsistencias.length? `<table><thead><tr><th>Fecha</th><th>Curso</th><th>Estado</th></tr></thead><tbody>${misAsistencias.map(x=>`<tr><td class="mono">${x.fecha}</td><td>${x.curso}</td><td><span class="badge ${x.estado==='presente'?'ok':'no'}">${x.estado}</span></td></tr>`).join('')}</tbody></table>` : `<p style="font-size:0.82rem;color:var(--ink-soft);">Sin registros de asistencia.</p>`}
+    </div>
+  `;
+}
+function abrirFicha(nombre){
+  const a = alumnos.find(x=>x.nombre===nombre);
+  if(!a) return;
+  const prof = profesores.find(p=>p.id===a.profesorId);
+  document.getElementById('fichaTitulo').textContent = a.nombre;
+  document.getElementById('fichaSub').textContent = a.instrumento + ' · Nivel ' + a.nivel + ' · Ingreso ' + a.ingreso;
+  document.getElementById('fichaBody').innerHTML = construirFichaHTML(a, prof, true);
+  document.getElementById('fichaOverlay').classList.add('open');
+}
+function cerrarFicha(){
+  document.getElementById('fichaOverlay').classList.remove('open');
+}
+function guardarNotasFicha(id){
+  const a = alumnos.find(x=>x.id===id);
+  if(!a) return;
+  a.notas = document.getElementById('fichaNotas').value;
+  cerrarFicha();
+}
+function renderFichaPropia(){
+  const prof = profesores.find(p=>p.id===currentAlumno.profesorId);
+  document.getElementById('fichaAlumnoWrap').innerHTML =
+    `<div class="panel"><h2>${currentAlumno.nombre}</h2>
+      <div style="font-family:'JetBrains Mono',monospace;color:var(--ink-soft);font-size:0.8rem;margin-top:6px;">
+        ${currentAlumno.instrumento} · Nivel ${currentAlumno.nivel} · Ingreso ${currentAlumno.ingreso}
+      </div>
+    </div>` + construirFichaHTML(currentAlumno, prof, false);
+}
+
+/* ---------------- MASTER RENDER ---------------- */
+function render(){
+  renderNav();
+  showSection();
+  if(state.section==="dashboard") renderDashboard();
+  if(state.section==="alumnos") renderAlumnos(document.getElementById("buscarAlumno").value);
+  if(state.section==="matricula"){ fillMatriculaSelects(); renderMatriculas(); }
+  if(state.section==="horarios") renderHorario();
+  if(state.section==="profesores") renderProfesores();
+  if(state.section==="tesoreria") renderTesoreria(document.getElementById("filtroPago").value);
+  if(state.section==="mispagos") renderMisPagos();
+  if(state.section==="asistencia") renderAsistencia();
+  if(state.section==="ficha") renderFichaPropia();
+}
+
+/* ---------------- EVENTS ---------------- */
+document.querySelectorAll(".role-btn").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".role-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    state.role = btn.dataset.role;
+    state.section = "dashboard";
+    render();
+  };
+});
+document.getElementById("buscarAlumno").addEventListener("input", e=>renderAlumnos(e.target.value));
+document.getElementById("filtroPago").addEventListener("change", e=>renderTesoreria(e.target.value));
+document.getElementById("btnMatricular").addEventListener("click", registrarMatricula);
+document.getElementById("modalCurso").addEventListener("change", poblarProfesoresModal);
+
+/* ---------------- INIT ---------------- */
+fillMatriculaSelects();
+document.getElementById("dateNow").textContent = new Date().toLocaleDateString("es-PE", {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+render();
+</script>
+</body>
+</html>
