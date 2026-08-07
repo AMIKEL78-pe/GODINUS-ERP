@@ -125,6 +125,17 @@
     color:var(--olive-deep);
     font-weight:600;
   }
+  .role-sub-select{
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.16);
+    color:var(--sage-bg);
+    padding:6px 8px;
+    border-radius:7px;
+    font-family:'Inter',sans-serif;
+    font-size:0.8rem;
+    margin-top:-2px;
+  }
+  .role-sub-select option{color:var(--ink);}
   nav.navlist{
     display:flex;
     flex-direction:column;
@@ -442,6 +453,8 @@
   .class-chip{cursor:pointer;}
   .cell.slot-empty{cursor:pointer;transition:background .12s;}
   .cell.slot-empty:hover{background:var(--sage-bg);}
+  .cell.disponible-resaltado{background:#F6D3CC;}
+  .cell.disponible-resaltado.slot-empty:hover{background:#F0BDB3;}
 
   ::selection{background:var(--gold-soft);}
 </style>
@@ -459,8 +472,10 @@
     <div class="role-switch">
       <label>Ver como</label>
       <button class="role-btn active" data-role="admin">Administrador</button>
-      <button class="role-btn" data-role="profesor">Profesor — María Rojas</button>
-      <button class="role-btn" data-role="alumno">Alumno — Diego Salas</button>
+      <button class="role-btn" data-role="profesor">Profesor</button>
+      <select id="selectProfesorRol" class="role-sub-select" style="display:none;"></select>
+      <button class="role-btn" data-role="alumno">Alumno</button>
+      <select id="selectAlumnoRol" class="role-sub-select" style="display:none;"></select>
     </div>
 
     <nav class="navlist" id="navlist"></nav>
@@ -539,7 +554,13 @@
     <!-- HORARIOS -->
     <section class="section" id="sec-horarios">
       <div class="panel">
-        <h2 id="horarioTitle">Horario semanal</h2>
+        <div class="toolbar" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <h2 id="horarioTitle" style="margin:0;">Horario semanal</h2>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;" id="filtroProfesorWrap">
+            <select id="filtroProfesorHorario"></select>
+            <button class="ghost" onclick="imprimirHorarioCompleto()">Imprimir horario completo (PDF)</button>
+          </div>
+        </div>
         <div class="week-grid" id="weekGrid"></div>
       </div>
     </section>
@@ -616,7 +637,7 @@
         <div class="report-card">
           <h3>Ingresos mensuales</h3>
           <p>Detalle de tesorería por mes y estado de pago.</p>
-          <button class="ghost" onclick="exportarIngresosExcel()">Exportar Excel</button>
+          <button class="ghost" onclick="exportarIngresosPDF()">Exportar PDF</button>
         </div>
         <div class="report-card">
           <h3>Asistencia por profesor</h3>
@@ -626,7 +647,7 @@
         <div class="report-card">
           <h3>Matrículas pendientes</h3>
           <p>Alumnos con pagos pendientes o parciales.</p>
-          <button class="ghost" onclick="exportarMatriculasPendientesExcel()">Exportar Excel</button>
+          <button class="ghost" onclick="exportarMatriculasPendientesPDF()">Exportar PDF</button>
         </div>
       </div>
     </section>
@@ -710,12 +731,12 @@ let matriculas = [
 ];
 
 let pagos = [
-  {id:1, alumno:"Diego Salas", concepto:"Mensualidad julio", monto:180, metodo:"Yape", estado:"pagado", fecha:"2026-07-01"},
-  {id:2, alumno:"Camila Vidal", concepto:"Mensualidad julio", monto:200, metodo:"Transferencia", estado:"pendiente", fecha:"2026-07-03"},
-  {id:3, alumno:"Mateo Ríos", concepto:"Mensualidad julio", monto:190, metodo:"Efectivo", estado:"pagado", fecha:"2026-07-05"},
-  {id:4, alumno:"Sebastián Luna", concepto:"Mensualidad julio", monto:210, metodo:"Yape", estado:"parcial", fecha:"2026-07-08"},
-  {id:5, alumno:"Valentina Cruz", concepto:"Matrícula", monto:120, metodo:"Efectivo", estado:"pagado", fecha:"2026-06-20"},
-  {id:6, alumno:"Rafaela Ponce", concepto:"Mensualidad julio", monto:200, metodo:"Transferencia", estado:"pendiente", fecha:"2026-07-10"},
+  {id:1, alumno:"Diego Salas", concepto:"Mensualidad julio", monto:180, metodo:"Yape", estado:"pagado", fecha:"2026-07-01", matriculaId:1},
+  {id:2, alumno:"Camila Vidal", concepto:"Mensualidad julio", monto:200, metodo:"Transferencia", estado:"pendiente", fecha:"2026-07-03", matriculaId:2},
+  {id:3, alumno:"Mateo Ríos", concepto:"Mensualidad julio", monto:190, metodo:"Efectivo", estado:"pagado", fecha:"2026-07-05", matriculaId:3},
+  {id:4, alumno:"Sebastián Luna", concepto:"Mensualidad julio", monto:210, metodo:"Yape", estado:"parcial", fecha:"2026-07-08", matriculaId:4},
+  {id:5, alumno:"Valentina Cruz", concepto:"Matrícula", monto:120, metodo:"Efectivo", estado:"pagado", fecha:"2026-06-20", matriculaId:null},
+  {id:6, alumno:"Rafaela Ponce", concepto:"Mensualidad julio", monto:200, metodo:"Transferencia", estado:"pendiente", fecha:"2026-07-10", matriculaId:null},
 ];
 
 const ingresosMensuales = [
@@ -771,8 +792,8 @@ const navByRole = {
   ],
 };
 const roleLabels = {admin:"Panel administrador", profesor:"Panel del profesor", alumno:"Panel del alumno"};
-const currentProfesor = profesores[0]; // María Rojas
-const currentAlumno = alumnos[0]; // Diego Salas
+let currentProfesor = profesores[0]; // profesor visualizado en el rol "Profesor"
+let currentAlumno = alumnos[0]; // alumno visualizado en el rol "Alumno"
 
 let state = {role:"admin", section:"dashboard"};
 
@@ -1070,12 +1091,22 @@ function guardarMatricula(id){
   m.profesor = document.getElementById('edMatProfesor').value;
   m.monto = parseFloat(document.getElementById('edMatMonto').value) || m.monto;
   m.estado = document.getElementById('edMatEstado').value;
+  let pagoVinculado = pagos.find(p=>p.matriculaId===id);
+  if(pagoVinculado){
+    pagoVinculado.alumno = m.alumno;
+    pagoVinculado.concepto = "Matrícula " + m.curso;
+    pagoVinculado.monto = m.monto;
+    pagoVinculado.estado = m.estado;
+  } else {
+    pagos.unshift({id:Date.now(), alumno:m.alumno, concepto:"Matrícula "+m.curso, monto:m.monto, metodo:"—", estado:m.estado, fecha:m.fecha, matriculaId:id});
+  }
   editingMatriculaId = null;
   renderMatriculas();
 }
 function eliminarMatricula(id){
-  if(!confirm('¿Eliminar esta matrícula?')) return;
+  if(!confirm('¿Eliminar esta matrícula? También se eliminará el pago asociado en Tesorería.')) return;
   matriculas = matriculas.filter(m=>m.id!==id);
+  pagos = pagos.filter(p=>p.matriculaId!==id);
   renderMatriculas();
 }
 function registrarMatricula(){
@@ -1084,7 +1115,10 @@ function registrarMatricula(){
   const profesor = document.getElementById("matProfesor").value;
   const monto = parseFloat(document.getElementById("matMonto").value) || 0;
   if(!nombre || !monto){ alert("Selecciona un alumno e ingresa el monto."); return; }
-  matriculas.unshift({id:Date.now(), alumno:nombre, curso, profesor, monto, estado:"pendiente", fecha:new Date().toISOString().slice(0,10)});
+  const nuevaId = Date.now();
+  const fechaHoy = new Date().toISOString().slice(0,10);
+  matriculas.unshift({id:nuevaId, alumno:nombre, curso, profesor, monto, estado:"pendiente", fecha:fechaHoy});
+  pagos.unshift({id:nuevaId+1, alumno:nombre, concepto:"Matrícula "+curso, monto, metodo:"—", estado:"pendiente", fecha:fechaHoy, matriculaId:nuevaId});
   document.getElementById("matMonto").value="";
   renderMatriculas();
 }
@@ -1100,13 +1134,27 @@ function renderHorario(){
     editable ? "Horario semanal — toda la academia (clic en una celda para agregar o editar una clase)" :
     "Mi horario semanal";
 
+  document.getElementById('filtroProfesorWrap').style.display = editable ? 'flex' : 'none';
+  let profesorFiltro = null;
+  if(editable){
+    const sel = document.getElementById('filtroProfesorHorario');
+    const valorPrevio = sel.value;
+    sel.innerHTML = '<option value="">Sombrear disponibilidad de un profesor…</option>' +
+      profesores.map(p=>`<option value="${p.id}" ${String(p.id)===valorPrevio?'selected':''}>${p.nombre}</option>`).join('');
+    profesorFiltro = profesores.find(p=>p.id===parseInt(sel.value));
+  }
+
   const grid = document.getElementById("weekGrid");
   let html = `<div class="cell head" style="background:var(--olive-deep);"></div>` + dias.map(d=>`<div class="cell head">${d}</div>`).join("");
   horas.forEach(hr=>{
     html += `<div class="cell time-label">${hr}</div>`;
     dias.forEach(d=>{
       const clases = items.filter(h=>h.dia===d && h.hora===hr);
-      const cellClass = editable && !clases.length ? "cell slot-empty" : "cell";
+      let cellClass = editable && !clases.length ? "cell slot-empty" : "cell";
+      if(profesorFiltro){
+        const disponible = profesorFiltro.dias.includes(d) && horaIndex(hr)>=horaIndex(profesorFiltro.desde) && horaIndex(hr)<horaIndex(profesorFiltro.hasta);
+        if(disponible) cellClass += " disponible-resaltado";
+      }
       const cellClick = editable ? ` onclick="abrirModalClase('${d}','${hr}')"` : "";
       const chips = clases.map(c=>{
         const chipClick = editable ? ` onclick="event.stopPropagation(); editarClasePorId(${c.id})"` : "";
@@ -1532,10 +1580,27 @@ function exportarAlumnosPorCursoPDF(){
   }).join('');
   exportarPDF('Alumnos por curso', `<table><thead><tr><th>Curso</th><th>N° alumnos</th><th>Alumnos</th></tr></thead><tbody>${filas}</tbody></table>`);
 }
-function exportarIngresosExcel(){
-  const filas = [['Alumno','Concepto','Monto (S/)','Método','Estado','Fecha']];
-  pagos.forEach(p=>filas.push([p.alumno, p.concepto, p.monto, p.metodo, p.estado, p.fecha]));
-  descargarCSV('ingresos_mensuales.csv', filas);
+function imprimirHorarioCompleto(){
+  let filas = '';
+  dias.forEach(d=>{
+    horas.forEach(hr=>{
+      horario.filter(h=>h.dia===d && h.hora===hr).forEach(c=>{
+        filas += `<tr><td>${d}</td><td>${hr}</td><td>${c.curso}</td><td>${c.profesor}</td><td>${c.alumno}</td><td>${c.aula||'—'}</td></tr>`;
+      });
+    });
+  });
+  if(!filas) filas = '<tr><td colspan="6">No hay clases programadas.</td></tr>';
+  exportarPDF('Horario semanal completo', `<table><thead><tr><th>Día</th><th>Hora</th><th>Curso</th><th>Profesor</th><th>Alumno</th><th>Aula</th></tr></thead><tbody>${filas}</tbody></table>`);
+}
+function exportarIngresosPDF(){
+  const total = pagos.filter(p=>p.estado==='pagado').reduce((s,p)=>s+p.monto,0);
+  const filas = pagos.map(p=>`<tr><td>${p.alumno}</td><td>${p.concepto}</td><td>S/ ${p.monto}</td><td>${p.metodo}</td><td>${p.estado}</td><td>${p.fecha}</td></tr>`).join('');
+  exportarPDF('Ingresos mensuales', `<p style="margin-bottom:10px;">Total cobrado: <strong>S/ ${total.toLocaleString()}</strong></p><table><thead><tr><th>Alumno</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>${filas}</tbody></table>`);
+}
+function exportarMatriculasPendientesPDF(){
+  const lista = matriculas.filter(m=>m.estado!=='pagado');
+  const filas = lista.map(m=>`<tr><td>${m.alumno}</td><td>${m.curso}</td><td>${m.profesor}</td><td>S/ ${m.monto}</td><td>${m.estado}</td><td>${m.fecha}</td></tr>`).join('') || '<tr><td colspan="6">No hay matrículas pendientes o parciales.</td></tr>';
+  exportarPDF('Matrículas pendientes', `<table><thead><tr><th>Alumno</th><th>Curso</th><th>Profesor</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>${filas}</tbody></table>`);
 }
 function exportarAsistenciaPorProfesorPDF(){
   const filas = profesores.map(p=>{
@@ -1545,17 +1610,12 @@ function exportarAsistenciaPorProfesorPDF(){
   }).join('');
   exportarPDF('Asistencia por profesor', `<table><thead><tr><th>Profesor</th><th>Clases programadas / semana</th><th>Clases dictadas (registradas)</th></tr></thead><tbody>${filas}</tbody></table>`);
 }
-function exportarMatriculasPendientesExcel(){
-  const filas = [['Alumno','Curso','Profesor','Monto (S/)','Estado','Fecha']];
-  matriculas.filter(m=>m.estado!=='pagado').forEach(m=>filas.push([m.alumno, m.curso, m.profesor, m.monto, m.estado, m.fecha]));
-  if(filas.length===1){ alert('No hay matrículas pendientes o parciales por exportar.'); return; }
-  descargarCSV('matriculas_pendientes.csv', filas);
-}
 
 /* ---------------- MASTER RENDER ---------------- */
 function render(){
   renderNav();
   showSection();
+  actualizarSelectoresRol();
   if(state.section==="dashboard") renderDashboard();
   if(state.section==="alumnos") renderAlumnos(document.getElementById("buscarAlumno").value);
   if(state.section==="matricula"){ fillMatriculaSelects(); renderMatriculas(); }
@@ -1568,22 +1628,50 @@ function render(){
 }
 
 /* ---------------- EVENTS ---------------- */
+function actualizarSelectoresRol(){
+  document.getElementById('selectProfesorRol').innerHTML = profesores.map(p=>
+    `<option value="${p.id}" ${p.id===currentProfesor.id?'selected':''}>${p.nombre}</option>`).join('');
+  document.getElementById('selectAlumnoRol').innerHTML = alumnos.map(a=>
+    `<option value="${a.id}" ${a.id===currentAlumno.id?'selected':''}>${a.nombre}</option>`).join('');
+}
+function actualizarVisibilidadSelectoresRol(){
+  document.getElementById('selectProfesorRol').style.display = state.role==='profesor' ? 'block' : 'none';
+  document.getElementById('selectAlumnoRol').style.display = state.role==='alumno' ? 'block' : 'none';
+}
 document.querySelectorAll(".role-btn").forEach(btn=>{
   btn.onclick = ()=>{
     document.querySelectorAll(".role-btn").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
     state.role = btn.dataset.role;
     state.section = "dashboard";
+    if(state.role==='profesor' && !profesores.find(p=>p.id===currentProfesor.id) && profesores.length){
+      currentProfesor = profesores[0];
+    }
+    if(state.role==='alumno' && !alumnos.find(a=>a.id===currentAlumno.id) && alumnos.length){
+      currentAlumno = alumnos[0];
+    }
+    actualizarSelectoresRol();
+    actualizarVisibilidadSelectoresRol();
     render();
   };
+});
+document.getElementById('selectProfesorRol').addEventListener('change', function(){
+  const p = profesores.find(x=>x.id===parseInt(this.value));
+  if(p){ currentProfesor = p; render(); }
+});
+document.getElementById('selectAlumnoRol').addEventListener('change', function(){
+  const a = alumnos.find(x=>x.id===parseInt(this.value));
+  if(a){ currentAlumno = a; render(); }
 });
 document.getElementById("buscarAlumno").addEventListener("input", e=>renderAlumnos(e.target.value));
 document.getElementById("filtroPago").addEventListener("change", e=>renderTesoreria(e.target.value));
 document.getElementById("btnMatricular").addEventListener("click", registrarMatricula);
 document.getElementById("modalCurso").addEventListener("change", poblarProfesoresModal);
+document.getElementById("filtroProfesorHorario").addEventListener("change", renderHorario);
 
 /* ---------------- INIT ---------------- */
 fillMatriculaSelects();
+actualizarSelectoresRol();
 document.getElementById("dateNow").textContent = new Date().toLocaleDateString("es-PE", {weekday:'long', year:'numeric', month:'long', day:'numeric'});
 render();
 </script>
