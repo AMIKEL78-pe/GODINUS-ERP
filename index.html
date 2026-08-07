@@ -611,22 +611,22 @@
         <div class="report-card">
           <h3>Alumnos por curso</h3>
           <p>Distribución de matriculados según instrumento.</p>
-          <button class="ghost">Exportar PDF</button>
+          <button class="ghost" onclick="exportarAlumnosPorCursoPDF()">Exportar PDF</button>
         </div>
         <div class="report-card">
           <h3>Ingresos mensuales</h3>
           <p>Detalle de tesorería por mes y estado de pago.</p>
-          <button class="ghost">Exportar Excel</button>
+          <button class="ghost" onclick="exportarIngresosExcel()">Exportar Excel</button>
         </div>
         <div class="report-card">
           <h3>Asistencia por profesor</h3>
           <p>Clases dictadas vs. clases programadas.</p>
-          <button class="ghost">Exportar PDF</button>
+          <button class="ghost" onclick="exportarAsistenciaPorProfesorPDF()">Exportar PDF</button>
         </div>
         <div class="report-card">
           <h3>Matrículas pendientes</h3>
           <p>Alumnos con pagos pendientes o parciales.</p>
-          <button class="ghost">Exportar Excel</button>
+          <button class="ghost" onclick="exportarMatriculasPendientesExcel()">Exportar Excel</button>
         </div>
       </div>
     </section>
@@ -681,8 +681,8 @@
 /* ---------------- DATA (en memoria — datos de ejemplo) ---------------- */
 const cursos = ["Piano","Guitarra","Canto","Batería","Violín","Bajo"];
 
-const horasOrder = ["2:00pm","3:00pm","4:00pm","5:00pm","6:00pm","7:00pm","8:00pm","9:00pm"];
-function horaIndex(h){ return horasOrder.indexOf(h); }
+const horas = ["8:00am","9:00am","10:00am","11:00am","12:00pm","1:00pm","2:00pm","3:00pm","4:00pm","5:00pm","6:00pm","7:00pm","8:00pm","9:00pm"];
+function horaIndex(h){ return horas.indexOf(h); }
 
 let profesores = [
   {id:1, nombre:"María Rojas", instrumento:"Piano", cursos:["Piano","Canto"], dias:["Lun","Mar","Mié","Jue","Vie"], desde:"3:00pm", hasta:"8:00pm", telefono:"987 111 222"},
@@ -724,7 +724,6 @@ const ingresosMensuales = [
 ];
 
 const dias = ["Lun","Mar","Mié","Jue","Vie","Sáb"];
-const horas = ["3:00pm","4:00pm","5:00pm","6:00pm","7:00pm"];
 const aulas = ["Aula 1","Aula 2","Aula 3","Sala de Ensayo"];
 
 let horario = [
@@ -1229,8 +1228,8 @@ function renderProfesores(){
           </div>
         </div>
         <div style="display:flex;gap:8px;">
-          <div class="field" style="flex:1;margin-bottom:8px;"><label>Desde</label><select id="edProfDesde">${horasOrder.map(h=>`<option ${h===p.desde?'selected':''}>${h}</option>`).join('')}</select></div>
-          <div class="field" style="flex:1;margin-bottom:8px;"><label>Hasta</label><select id="edProfHasta">${horasOrder.map(h=>`<option ${h===p.hasta?'selected':''}>${h}</option>`).join('')}</select></div>
+          <div class="field" style="flex:1;margin-bottom:8px;"><label>Desde</label><select id="edProfDesde">${horas.map(h=>`<option ${h===p.desde?'selected':''}>${h}</option>`).join('')}</select></div>
+          <div class="field" style="flex:1;margin-bottom:8px;"><label>Hasta</label><select id="edProfHasta">${horas.map(h=>`<option ${h===p.hasta?'selected':''}>${h}</option>`).join('')}</select></div>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;">
           <button class="btn-icon" onclick="guardarProfesor(${p.id})">Guardar</button>
@@ -1491,6 +1490,66 @@ function renderFichaPropia(){
         ${currentAlumno.instrumento} · Nivel ${currentAlumno.nivel} · Ingreso ${currentAlumno.ingreso}
       </div>
     </div>` + construirFichaHTML(currentAlumno, prof, false);
+}
+
+/* ---------------- REPORTES: EXPORTACIÓN ---------------- */
+function descargarCSV(nombreArchivo, filas){
+  const csv = filas.map(fila => fila.map(val=>{
+    const s = String(val ?? '').replace(/"/g,'""');
+    return /[",\n]/.test(s) ? `"${s}"` : s;
+  }).join(',')).join('\n');
+  const blob = new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombreArchivo;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportarPDF(titulo, htmlContenido){
+  const ventana = window.open('', '_blank');
+  if(!ventana){ alert('El navegador bloqueó la ventana de impresión. Habilita las ventanas emergentes para exportar el PDF.'); return; }
+  ventana.document.write(`<html><head><title>${titulo} — GOD IN US</title>
+    <style>
+      body{font-family:Arial,Helvetica,sans-serif;color:#1C1C15;padding:32px;}
+      h1{color:#2E3620;margin-bottom:2px;}
+      .sub{color:#5A5A4C;font-size:0.85rem;margin-bottom:18px;}
+      table{border-collapse:collapse;width:100%;font-size:0.86rem;}
+      th{background:#2E3620;color:#fff;text-align:left;padding:7px 9px;}
+      td{padding:7px 9px;border-bottom:1px solid #DEDACB;}
+    </style></head><body>
+    <h1>${titulo}</h1>
+    <div class="sub">GOD IN US — Academia de Formación Musical · generado ${new Date().toLocaleDateString('es-PE')}</div>
+    ${htmlContenido}
+    </body></html>`);
+  ventana.document.close();
+  ventana.focus();
+  setTimeout(()=>{ ventana.print(); }, 300);
+}
+function exportarAlumnosPorCursoPDF(){
+  const filas = cursos.map(c=>{
+    const lista = alumnos.filter(a=>a.instrumento===c);
+    return `<tr><td>${c}</td><td>${lista.length}</td><td>${lista.map(a=>a.nombre).join(', ')||'—'}</td></tr>`;
+  }).join('');
+  exportarPDF('Alumnos por curso', `<table><thead><tr><th>Curso</th><th>N° alumnos</th><th>Alumnos</th></tr></thead><tbody>${filas}</tbody></table>`);
+}
+function exportarIngresosExcel(){
+  const filas = [['Alumno','Concepto','Monto (S/)','Método','Estado','Fecha']];
+  pagos.forEach(p=>filas.push([p.alumno, p.concepto, p.monto, p.metodo, p.estado, p.fecha]));
+  descargarCSV('ingresos_mensuales.csv', filas);
+}
+function exportarAsistenciaPorProfesorPDF(){
+  const filas = profesores.map(p=>{
+    const programadas = horario.filter(h=>h.profesor===p.nombre).length;
+    const dictadas = asistencias.filter(a=>a.profesor===p.nombre && a.estado==='presente').length;
+    return `<tr><td>${p.nombre}</td><td>${programadas}</td><td>${dictadas}</td></tr>`;
+  }).join('');
+  exportarPDF('Asistencia por profesor', `<table><thead><tr><th>Profesor</th><th>Clases programadas / semana</th><th>Clases dictadas (registradas)</th></tr></thead><tbody>${filas}</tbody></table>`);
+}
+function exportarMatriculasPendientesExcel(){
+  const filas = [['Alumno','Curso','Profesor','Monto (S/)','Estado','Fecha']];
+  matriculas.filter(m=>m.estado!=='pagado').forEach(m=>filas.push([m.alumno, m.curso, m.profesor, m.monto, m.estado, m.fecha]));
+  if(filas.length===1){ alert('No hay matrículas pendientes o parciales por exportar.'); return; }
+  descargarCSV('matriculas_pendientes.csv', filas);
 }
 
 /* ---------------- MASTER RENDER ---------------- */
