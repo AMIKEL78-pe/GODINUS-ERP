@@ -136,6 +136,20 @@
     margin-top:-2px;
   }
   .role-sub-select option{color:var(--ink);}
+  .sidebar-action-btn{
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.16);
+    color:var(--sage-bg);
+    padding:8px 10px;
+    border-radius:7px;
+    font-family:'Inter',sans-serif;
+    font-size:0.82rem;
+    cursor:pointer;
+    text-align:center;
+    transition:background .15s, border-color .15s;
+  }
+  .sidebar-action-btn:hover{background:rgba(255,255,255,0.1);border-color:var(--gold);}
+  .sidebar-action-btn:disabled{opacity:0.6;cursor:default;}
   nav.navlist{
     display:flex;
     flex-direction:column;
@@ -480,6 +494,11 @@
 
     <nav class="navlist" id="navlist"></nav>
 
+    <div>
+      <button class="sidebar-action-btn" id="btnGuardarTodo" onclick="guardarTodo()" style="width:100%;font-weight:600;">💾 Guardar todos los cambios</button>
+      <div id="guardadoStatus" style="font-size:0.68rem;color:var(--olive-light);margin-top:5px;min-height:14px;"></div>
+    </div>
+
     <div class="sidebar-foot">Perú · año lectivo 2026</div>
   </aside>
 
@@ -567,6 +586,25 @@
 
     <!-- PROFESORES -->
     <section class="section" id="sec-profesores">
+      <div class="panel add-row-panel" id="panelNuevoProfesor">
+        <h2>Nuevo profesor</h2>
+        <div class="field" style="margin-bottom:8px;"><label>Nombre</label><input type="text" id="nvProfNombre" placeholder="Nombre completo"></div>
+        <div class="field" style="margin-bottom:8px;"><label>Instrumento principal</label><input type="text" id="nvProfInstrumento" placeholder="Ej. Piano"></div>
+        <div class="field" style="margin-bottom:8px;"><label>Teléfono</label><input type="text" id="nvProfTelefono" placeholder="987 000 000"></div>
+        <div class="field" style="margin-bottom:8px;">
+          <label>Cursos que dicta</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;" id="nvProfCursosWrap"></div>
+        </div>
+        <div class="field" style="margin-bottom:8px;">
+          <label>Días disponibles</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;" id="nvProfDiasWrap"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <div class="field" style="flex:1;margin-bottom:8px;"><label>Desde</label><select id="nvProfDesde"></select></div>
+          <div class="field" style="flex:1;margin-bottom:8px;"><label>Hasta</label><select id="nvProfHasta"></select></div>
+        </div>
+        <button class="primary" onclick="agregarProfesorNuevo()">Guardar</button>
+      </div>
       <div class="panel">
         <h2>Plana docente</h2>
         <div class="card-grid" id="gridProfesores"></div>
@@ -1253,6 +1291,15 @@ function eliminarClase(){
 /* ---------------- PROFESORES ---------------- */
 let editingProfesorId = null;
 function renderProfesores(){
+  document.getElementById('nvProfCursosWrap').innerHTML = cursos.map(c=>`<label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+    <input type="checkbox" class="nvProfCurso" value="${c}"> ${c}
+  </label>`).join('');
+  document.getElementById('nvProfDiasWrap').innerHTML = dias.map(d=>`<label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+    <input type="checkbox" class="nvProfDia" value="${d}"> ${d}
+  </label>`).join('');
+  document.getElementById('nvProfDesde').innerHTML = horas.map(h=>`<option>${h}</option>`).join('');
+  document.getElementById('nvProfHasta').innerHTML = horas.map(h=>`<option>${h}</option>`).join('');
+
   document.getElementById("gridProfesores").innerHTML = profesores.map(p=>{
     if(editingProfesorId===p.id){
       return `<div class="prof-card">
@@ -1324,6 +1371,24 @@ function guardarProfesor(id){
 function eliminarProfesor(id){
   if(!confirm('¿Eliminar este profesor? Sus clases asignadas en el horario quedarán sin profesor válido.')) return;
   profesores = profesores.filter(x=>x.id!==id);
+  renderProfesores();
+}
+function agregarProfesorNuevo(){
+  const nombre = document.getElementById('nvProfNombre').value.trim();
+  if(!nombre){ alert('Ingresa el nombre del profesor.'); return; }
+  const instrumento = document.getElementById('nvProfInstrumento').value.trim() || '—';
+  const telefono = document.getElementById('nvProfTelefono').value.trim() || '—';
+  const cursosSel = [...document.querySelectorAll('.nvProfCurso:checked')].map(el=>el.value);
+  const diasSel = [...document.querySelectorAll('.nvProfDia:checked')].map(el=>el.value);
+  const desde = document.getElementById('nvProfDesde').value;
+  const hasta = document.getElementById('nvProfHasta').value;
+  if(!cursosSel.length){ alert('Selecciona al menos un curso que dicte.'); return; }
+  if(!diasSel.length){ alert('Selecciona al menos un día disponible.'); return; }
+  if(horaIndex(hasta) <= horaIndex(desde)){ alert('La hora "hasta" debe ser posterior a la hora "desde".'); return; }
+  profesores.push({id:Date.now(), nombre, instrumento, cursos:cursosSel, dias:diasSel, desde, hasta, telefono});
+  document.getElementById('nvProfNombre').value = '';
+  document.getElementById('nvProfInstrumento').value = '';
+  document.getElementById('nvProfTelefono').value = '';
   renderProfesores();
 }
 
@@ -1563,7 +1628,7 @@ function exportarPDF(titulo, htmlContenido){
       .sub{color:#5A5A4C;font-size:0.85rem;margin-bottom:18px;}
       table{border-collapse:collapse;width:100%;font-size:0.86rem;}
       th{background:#2E3620;color:#fff;text-align:left;padding:7px 9px;}
-      td{padding:7px 9px;border-bottom:1px solid #DEDACB;}
+      td{padding:7px 9px;border-bottom:1px solid #DEDACB;border-right:1px solid #DEDACB;vertical-align:top;}
     </style></head><body>
     <h1>${titulo}</h1>
     <div class="sub">GOD IN US — Academia de Formación Musical · generado ${new Date().toLocaleDateString('es-PE')}</div>
@@ -1581,16 +1646,17 @@ function exportarAlumnosPorCursoPDF(){
   exportarPDF('Alumnos por curso', `<table><thead><tr><th>Curso</th><th>N° alumnos</th><th>Alumnos</th></tr></thead><tbody>${filas}</tbody></table>`);
 }
 function imprimirHorarioCompleto(){
-  let filas = '';
-  dias.forEach(d=>{
-    horas.forEach(hr=>{
-      horario.filter(h=>h.dia===d && h.hora===hr).forEach(c=>{
-        filas += `<tr><td>${d}</td><td>${hr}</td><td>${c.curso}</td><td>${c.profesor}</td><td>${c.alumno}</td><td>${c.aula||'—'}</td></tr>`;
-      });
-    });
-  });
-  if(!filas) filas = '<tr><td colspan="6">No hay clases programadas.</td></tr>';
-  exportarPDF('Horario semanal completo', `<table><thead><tr><th>Día</th><th>Hora</th><th>Curso</th><th>Profesor</th><th>Alumno</th><th>Aula</th></tr></thead><tbody>${filas}</tbody></table>`);
+  const encabezado = `<tr><th></th>${dias.map(d=>`<th>${d}</th>`).join('')}</tr>`;
+  const filas = horas.map(hr=>{
+    const celdas = dias.map(d=>{
+      const clases = horario.filter(h=>h.dia===d && h.hora===hr);
+      if(!clases.length) return '<td></td>';
+      const contenido = clases.map(c=>`<div style="margin-bottom:6px;"><strong>${c.curso}</strong><br>${c.profesor}<br><span style="color:#5A5A4C;font-size:0.78rem;">${c.alumno} · ${c.aula||'—'}</span></div>`).join('');
+      return `<td>${contenido}</td>`;
+    }).join('');
+    return `<tr><td style="font-weight:600;white-space:nowrap;background:#F3F1E6;">${hr}</td>${celdas}</tr>`;
+  }).join('');
+  exportarPDF('Horario semanal completo', `<table style="table-layout:fixed;"><thead>${encabezado}</thead><tbody>${filas}</tbody></table>`);
 }
 function exportarIngresosPDF(){
   const total = pagos.filter(p=>p.estado==='pagado').reduce((s,p)=>s+p.monto,0);
@@ -1669,11 +1735,62 @@ document.getElementById("btnMatricular").addEventListener("click", registrarMatr
 document.getElementById("modalCurso").addEventListener("change", poblarProfesoresModal);
 document.getElementById("filtroProfesorHorario").addEventListener("change", renderHorario);
 
+/* ---------------- GUARDADO PERMANENTE ---------------- */
+const CLAVE_DATOS = "god_in_us_datos";
+
+async function guardarTodo(){
+  const status = document.getElementById('guardadoStatus');
+  if(!window.storage){
+    if(status) status.textContent = 'Este visor no soporta guardado permanente.';
+    return;
+  }
+  const btn = document.getElementById('btnGuardarTodo');
+  btn.disabled = true;
+  if(status) status.textContent = 'Guardando…';
+  try{
+    const datos = { alumnos, profesores, matriculas, pagos, horario, asistencias };
+    const res = await window.storage.set(CLAVE_DATOS, JSON.stringify(datos), false);
+    if(status){
+      status.textContent = res
+        ? '✓ Guardado ' + new Date().toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'})
+        : 'No se pudo guardar. Intenta de nuevo.';
+    }
+  }catch(e){
+    if(status) status.textContent = 'Error al guardar los cambios.';
+  }
+  btn.disabled = false;
+}
+
+async function cargarDatosGuardados(){
+  if(!window.storage) return;
+  try{
+    const res = await window.storage.get(CLAVE_DATOS, false);
+    if(res && res.value){
+      const datos = JSON.parse(res.value);
+      if(Array.isArray(datos.alumnos)) alumnos = datos.alumnos;
+      if(Array.isArray(datos.profesores)) profesores = datos.profesores;
+      if(Array.isArray(datos.matriculas)) matriculas = datos.matriculas;
+      if(Array.isArray(datos.pagos)) pagos = datos.pagos;
+      if(Array.isArray(datos.horario)) horario = datos.horario;
+      if(Array.isArray(datos.asistencias)) asistencias = datos.asistencias;
+      if(!alumnos.find(a=>a.id===currentAlumno.id) && alumnos.length) currentAlumno = alumnos[0];
+      if(!profesores.find(p=>p.id===currentProfesor.id) && profesores.length) currentProfesor = profesores[0];
+      const status = document.getElementById('guardadoStatus');
+      if(status) status.textContent = 'Se cargaron tus datos guardados.';
+    }
+  }catch(e){
+    // sin datos guardados todavía: se continúa con los datos de ejemplo
+  }
+}
+
 /* ---------------- INIT ---------------- */
-fillMatriculaSelects();
-actualizarSelectoresRol();
-document.getElementById("dateNow").textContent = new Date().toLocaleDateString("es-PE", {weekday:'long', year:'numeric', month:'long', day:'numeric'});
-render();
+(async function iniciar(){
+  await cargarDatosGuardados();
+  fillMatriculaSelects();
+  actualizarSelectoresRol();
+  document.getElementById("dateNow").textContent = new Date().toLocaleDateString("es-PE", {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  render();
+})();
 </script>
 </body>
 </html>
