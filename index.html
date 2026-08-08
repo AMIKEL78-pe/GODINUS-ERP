@@ -150,6 +150,14 @@
   }
   .sidebar-action-btn:hover{background:rgba(255,255,255,0.1);border-color:var(--gold);}
   .sidebar-action-btn:disabled{opacity:0.6;cursor:default;}
+  .curso-chip{
+    display:flex;align-items:center;gap:8px;
+    background:var(--sage-bg);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:6px 8px 6px 14px;
+    font-size:0.82rem;
+  }
   nav.navlist{
     display:flex;
     flex-direction:column;
@@ -591,6 +599,15 @@
 
     <!-- PROFESORES -->
     <section class="section" id="sec-profesores">
+      <div class="panel" id="panelCursos">
+        <h2>Cursos / instrumentos que ofrece la academia</h2>
+        <p style="font-size:0.8rem;color:var(--ink-soft);margin:0 0 12px;">Este catálogo se usa en Alumnos, Matrícula, Profesores, Horarios y Reportes.</p>
+        <div class="toolbar">
+          <input type="text" id="nvCursoNombre" placeholder="Nombre del nuevo curso (ej. Ukelele)">
+          <button class="primary" onclick="agregarCursoNuevo()">Agregar curso</button>
+        </div>
+        <div id="listaCursos" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
+      </div>
       <div class="panel add-row-panel" id="panelNuevoProfesor">
         <h2>Nuevo profesor</h2>
         <div class="field" style="margin-bottom:8px;"><label>Nombre</label><input type="text" id="nvProfNombre" placeholder="Nombre completo"></div>
@@ -1293,9 +1310,64 @@ function eliminarClase(){
   renderHorario();
 }
 
+/* ---------------- GESTIÓN DE CURSOS ---------------- */
+function renderCursos(){
+  const cont = document.getElementById('listaCursos');
+  if(!cont) return;
+  cont.innerHTML = cursos.map((c,i)=>`
+    <div class="curso-chip">
+      <span>${c}</span>
+      <button class="btn-icon" style="margin:0;" onclick="editarCurso(${i})">Editar</button>
+      <button class="btn-icon danger" style="margin:0;" onclick="eliminarCurso(${i})">Eliminar</button>
+    </div>`).join('') || '<p style="font-size:0.82rem;color:var(--ink-soft);">No hay cursos registrados.</p>';
+}
+function agregarCursoNuevo(){
+  const input = document.getElementById('nvCursoNombre');
+  const nombre = input.value.trim();
+  if(!nombre){ alert('Ingresa el nombre del curso.'); return; }
+  if(cursos.includes(nombre)){ alert('Ese curso ya existe en el catálogo.'); return; }
+  cursos.push(nombre);
+  input.value = '';
+  renderCursos();
+}
+function editarCurso(index){
+  const actual = cursos[index];
+  const nuevo = prompt('Nuevo nombre para "' + actual + '":', actual);
+  if(nuevo===null) return;
+  const nombreNuevo = nuevo.trim();
+  if(!nombreNuevo || nombreNuevo===actual) return;
+  if(cursos.includes(nombreNuevo)){ alert('Ya existe un curso con ese nombre.'); return; }
+  cursos[index] = nombreNuevo;
+  // sincronizar el nuevo nombre en todos los registros que lo usan
+  profesores.forEach(p=>{
+    if(p.instrumento===actual) p.instrumento = nombreNuevo;
+    p.cursos = p.cursos.map(c=> c===actual ? nombreNuevo : c);
+  });
+  alumnos.forEach(a=>{ if(a.instrumento===actual) a.instrumento = nombreNuevo; });
+  matriculas.forEach(m=>{ if(m.curso===actual) m.curso = nombreNuevo; });
+  horario.forEach(h=>{ if(h.curso===actual) h.curso = nombreNuevo; });
+  asistencias.forEach(x=>{ if(x.curso===actual) x.curso = nombreNuevo; });
+  renderProfesores();
+}
+function eliminarCurso(index){
+  const nombre = cursos[index];
+  const enUso = alumnos.some(a=>a.instrumento===nombre)
+    || profesores.some(p=>p.cursos.includes(nombre))
+    || matriculas.some(m=>m.curso===nombre)
+    || horario.some(h=>h.curso===nombre);
+  if(enUso){
+    alert('No se puede eliminar "' + nombre + '" porque está en uso (alumnos, profesores, matrículas u horario). Reasigna esos registros a otro curso antes de eliminarlo, o usa "Editar" para renombrarlo.');
+    return;
+  }
+  if(!confirm('¿Eliminar el curso "' + nombre + '" del catálogo?')) return;
+  cursos.splice(index,1);
+  renderCursos();
+}
+
 /* ---------------- PROFESORES ---------------- */
 let editingProfesorId = null;
 function renderProfesores(){
+  renderCursos();
   document.getElementById('nvProfCursosWrap').innerHTML = cursos.map(c=>`<label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
     <input type="checkbox" class="nvProfCurso" value="${c}"> ${c}
   </label>`).join('');
@@ -1741,17 +1813,40 @@ document.getElementById("modalCurso").addEventListener("change", poblarProfesore
 document.getElementById("filtroProfesorHorario").addEventListener("change", renderHorario);
 
 /* ---------------- EXPORTAR / IMPORTAR RESPALDO .JSON ---------------- */
-function exportarJSON(){
+async function exportarJSON(){
   const datos = { alumnos, profesores, matriculas, pagos, horario, asistencias, exportadoEl: new Date().toISOString() };
-  const blob = new Blob([JSON.stringify(datos, null, 2)], {type:'application/json'});
+  const contenido = JSON.stringify(datos, null, 2);
+  const nombreSugerido = 'god-in-us-datos_' + new Date().toISOString().slice(0,10) + '.json';
+  const status = document.getElementById('guardadoStatus');
+
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: nombreSugerido,
+        types: [{ description: 'Respaldo JSON', accept: {'application/json': ['.json']} }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(contenido);
+      await writable.close();
+      if(status) status.textContent = 'Archivo .json guardado en la carpeta elegida.';
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError'){
+        if(status) status.textContent = 'Exportación cancelada.';
+        return;
+      }
+      // si falla el selector de carpeta, se continúa con la descarga automática de respaldo
+    }
+  }
+
+  const blob = new Blob([contenido], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'god-in-us-datos_' + new Date().toISOString().slice(0,10) + '.json';
+  a.download = nombreSugerido;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  const status = document.getElementById('guardadoStatus');
-  if(status) status.textContent = 'Archivo .json descargado.';
+  if(status) status.textContent = 'Archivo .json descargado a tu carpeta de Descargas (este navegador no permite elegir carpeta).';
 }
 
 document.getElementById('inputImportarJSON').addEventListener('change', function(e){
