@@ -497,6 +497,11 @@
     <div>
       <button class="sidebar-action-btn" id="btnGuardarTodo" onclick="guardarTodo()" style="width:100%;font-weight:600;">💾 Guardar todos los cambios</button>
       <div id="guardadoStatus" style="font-size:0.68rem;color:var(--olive-light);margin-top:5px;min-height:14px;"></div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button class="sidebar-action-btn" id="btnExportarJSON" onclick="exportarJSON()" style="flex:1;font-size:0.72rem;">⬇️ Exportar .json</button>
+        <button class="sidebar-action-btn" id="btnImportarJSON" onclick="document.getElementById('inputImportarJSON').click()" style="flex:1;font-size:0.72rem;">⬆️ Importar .json</button>
+      </div>
+      <input type="file" id="inputImportarJSON" accept="application/json,.json" style="display:none;">
     </div>
 
     <div class="sidebar-foot">Perú · año lectivo 2026</div>
@@ -1734,6 +1739,63 @@ document.getElementById("filtroPago").addEventListener("change", e=>renderTesore
 document.getElementById("btnMatricular").addEventListener("click", registrarMatricula);
 document.getElementById("modalCurso").addEventListener("change", poblarProfesoresModal);
 document.getElementById("filtroProfesorHorario").addEventListener("change", renderHorario);
+
+/* ---------------- EXPORTAR / IMPORTAR RESPALDO .JSON ---------------- */
+function exportarJSON(){
+  const datos = { alumnos, profesores, matriculas, pagos, horario, asistencias, exportadoEl: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(datos, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'god-in-us-datos_' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const status = document.getElementById('guardadoStatus');
+  if(status) status.textContent = 'Archivo .json descargado.';
+}
+
+document.getElementById('inputImportarJSON').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    let datos;
+    try{
+      datos = JSON.parse(ev.target.result);
+    }catch(err){
+      alert('El archivo seleccionado no es un .json válido.');
+      e.target.value = '';
+      return;
+    }
+    const tieneDatos = ['alumnos','profesores','matriculas','pagos','horario','asistencias'].some(k=>Array.isArray(datos[k]));
+    if(!tieneDatos){
+      alert('El archivo no contiene un respaldo reconocible de esta aplicación.');
+      e.target.value = '';
+      return;
+    }
+    if(!confirm('Esto reemplazará todos los datos actuales (alumnos, profesores, matrículas, pagos, horario y asistencia) con los del archivo importado. ¿Continuar?')){
+      e.target.value = '';
+      return;
+    }
+    if(Array.isArray(datos.alumnos)) alumnos = datos.alumnos;
+    if(Array.isArray(datos.profesores)) profesores = datos.profesores;
+    if(Array.isArray(datos.matriculas)) matriculas = datos.matriculas;
+    if(Array.isArray(datos.pagos)) pagos = datos.pagos;
+    if(Array.isArray(datos.horario)) horario = datos.horario;
+    if(Array.isArray(datos.asistencias)) asistencias = datos.asistencias;
+    if(!alumnos.find(a=>a.id===currentAlumno.id) && alumnos.length) currentAlumno = alumnos[0];
+    if(!profesores.find(p=>p.id===currentProfesor.id) && profesores.length) currentProfesor = profesores[0];
+    state.role = 'admin';
+    state.section = 'dashboard';
+    document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('active', b.dataset.role==='admin'));
+    actualizarVisibilidadSelectoresRol();
+    render();
+    const status = document.getElementById('guardadoStatus');
+    if(status) status.textContent = 'Datos importados desde ' + file.name + '.';
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
 
 /* ---------------- GUARDADO PERMANENTE ---------------- */
 const CLAVE_DATOS = "god_in_us_datos";
